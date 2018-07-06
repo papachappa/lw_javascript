@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+     body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../../Libs/Enumerators.js"></script>
+<script src="../../Libs/kernel.js"></script>
+<script type="text/javascript">
+
+//TEST SETTINGS
+var testName = "Verification of the Ziggo service list";
+
+//execute channel change to:
+var channelNumber = [221, MediaType.TV, "Ziggo (voormalig Ziggo)"];
+var timeout = 60000;
+
+//EXPECTED RESULT
+var listName = "Ziggo (voormalig Ziggo)";
+
+//list of services that should exist in service list "listName"
+var expectedServiceList = [
+    [ "TS22 SID22001", "221", "22001", "22", "1536", "4", "1", "1" ],
+    [ "TS22 SID22002", "222", "22002", "22", "1536", "4", "1", "1" ],
+    [ "TS23 SID23001", "231", "23001", "23", "1536", "4", "1", "1" ],
+    [ "TS23 SID23002", "232", "23002", "23", "1536", "4", "1", "1" ],
+    [ "TS24 SID24001", "241", "24001", "24", "1536", "4", "1", "1" ],
+    [ "TS24 SID24002", "242", "24002", "24", "1536", "4", "1", "1" ],
+    [ "TS25 SID25001", "251", "25001", "25", "1536", "4", "1", "1" ],
+    [ "TS25 SID25002", "252", "25002", "25", "1536", "4", "1", "1" ]
+];
+
+//TEST STEPS
+var idTestProcess=""; //variable to display log on WeBiz screen
+window.onload = function(){
+    kernel.require(
+        '../Libs/Scenarios/SilentDCM.js',
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 600, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.
+            SilentDCM.startTest(channelNumber,
+								timeout,
+								listName,
+								expectedServiceList);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            jbiz.writeLine("WARN: '../Libs/Scenarios/SilentDCM.js' is not uploaded.");
+            setTimeout(function() { jbiz.exit(); }, 3000);
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

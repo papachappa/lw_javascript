@@ -1,0 +1,298 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+     body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>    
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+//Test settings
+var testName = "EIT p/f comparison";
+// Service list
+var serviceList = "UPC";
+//Homing channel (from actual TS)
+var homingChannel = ["535", MediaType.TV, "UPC"];
+// Filter to collect TV or Radio services or Both types of services
+var ServiceType = MediaType.TV;
+//var ServiceType = MediaType.RADIO;
+//var ServiceType = "all";
+/*Additional timeout in seconds before results comparing.
+  Common timeout = 20 second + additional timeout.
+*/
+var timeout = 0;
+
+/*Filter fields. Set = [] if all fields should be compared.
+This parameter can be skipped. In that case following filter will be used:
+var fieldsToDelete = [SL_Fields.PRESENT_EVENT_SHORTINFO,
+					  SL_Fields.PRESENT_EVENT_LONGINFO,
+					  SL_Fields.FOLLOWING_EVENT_SHORTINFO,
+					  SL_Fields.FOLLOWING_EVENT_LONGINFO];
+*/
+var fieldsToDelete = [SL_Fields.PRESENT_EVENT_SHORTINFO,
+					  SL_Fields.PRESENT_EVENT_LONGINFO,
+					  SL_Fields.FOLLOWING_EVENT_SHORTINFO,
+					  SL_Fields.FOLLOWING_EVENT_LONGINFO];
+
+//SERVICE_NAME, CHANNEL_NUMBER, SID, TSID, ONID, PRESENT_EVENT_START, PRESENT_EVENT_STOP, PRESENT_EVENT_NAME, FOLLOWING_EVENT_START, FOLLOWING_EVENT_STOP, FOLLOWING_EVENT_NAME, MEDIA_TYPE 
+var expectedServiceList = [
+	[ "ORF eins", "101", "1001", "1", "1537", "1364202000", "1364209200", "Kokowääh", "1364209200", "1364210700", "Die Schlümpfe", "4" ],
+	[ "ORF 2 Wien", "102", "1002", "1", "1537", "1364205600", "1364208300", "Alisa", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "ATV", "103", "3008", "3", "1537", "1364199900", "1364208900", "Mediashop", "1364208900", "1364209500", "Hi Society", "4" ],
+	[ "PULS 4", "104", "2007", "2", "1537", "1364205900", "1364209200", "WIFF! Österreich", "1364209200", "1364212500", "Unsere kleine Farm", "4" ],
+	[ "W24", "105", "3009", "3", "1537", "1364191200", "1364252400", "Koch-Tag", "1364252400", "1364253300", "Strom der Erinnerung", "4" ],
+	[ "Sixx Austria", "106", "1007", "1", "1537", "1364205900", "1364208600", "J.A.G. - Auftrag der Ehre", "1364208600", "1364211000", "J.A.G. - Auftrag der Ehre", "4" ],
+	[ "Servus TV", "107", "1005", "1", "1537", "1364205600", "1364207400", "Aus dem Leben", "1364207400", "1364208900", "Wohl bekomm's", "4" ],
+	[ "OKTO", "108", "2012", "2", "1537", "1364206500", "1364207400", "Mies. Magazin", "1364207400", "1364208300", "Fashion and the City", "4" ],
+	[ "UPC Infokanal", "109", "33007", "33", "1537", "1364205600", "1364207400", "UPC NEWS", "1364207400", "1364209200", "UPC NEWS", "4" ],
+	[ "Das Erste", "110", "2001", "2", "1537", "1364205900", "1364209200", "ARD-Buffet", "1364209200", "1364210100", "Tagesschau", "4" ],
+	[ "ZDF", "111", "3001", "3", "1537", "1364206500", "1364209200", "SOKO Köln", "1364209200", "1364209800", "Heute", "4" ],
+	[ "ORF III", "112", "1004", "1", "1537", "1364205300", "1364208300", "Die kulinarischen ...", "1364208300", "1364209500", "Panorama", "4" ],
+	[ "ProSieben", "113", "2004", "2", "1537", "1364206500", "1364213700", "She's the Man", "1364213700", "1364215500", "Scrubs - Die Anfänger", "4" ],
+	[ "RTL", "114", "4001", "4", "1537", "1364203800", "1364207400", "Familien im Brennpunkt", "1364207400", "1364209200", "Unsere erste ...", "4" ],
+	[ "SAT.1", "115", "2005", "2", "1537", "1364205600", "1364209200", "Richterin Barbara Salesch", "1364209200", "1364212800", "Richter Alexander Hold", "4" ],
+	[ "RTL II", "116", "4003", "4", "1537", "1364206500", "1364210100", "Family Stories", "1364210100", "1364213700", "Köln 50667", "4" ],
+	[ "kabel eins", "117", "2006", "2", "1537", "1364205600", "1364209200", "Ghost Whisperer", "1364209200", "1364212500", "Cold Case", "4" ],
+	[ "VOX", "118", "4002", "4", "1537", "1364205000", "1364209200", "Mieten, kaufen, wohnen", "1364209200", "1364212800", "Shopping Queen", "4" ],
+	[ "ATV II", "119", "14008", "14", "1537", "1364205600", "1364207400", "Teleshopping", "1364207400", "1364218200", "Mediashop", "4" ],
+	[ "3sat", "120", "3002", "3", "1537", "1364202900", "1364210100", "Tietjen und Hirschhausen", "1364210100", "1364211900", "sonntags", "4" ],
+	[ "BR", "121", "2002", "2", "1537", "1364202300", "1364207700", "WinterStar 2013", "1364207700", "1364209800", "freizeit", "4" ],
+	[ "MDR", "122", "3003", "3", "1537", "1364205600", "1364208300", "MDR um elf", "1364208300", "1364211300", "In aller Freundschaft", "4" ],
+	[ "Südwest Fernsehen / BW", "123", "2003", "2", "1537", "1364205300", "1364207100", "Landesschau Mobil", "1364207100", "1364208600", "Brisant", "4" ],
+	[ "NDR", "124", "32003", "32", "1537", "1364205600", "1364207400", "Hallo Niedersachsen", "1364207400", "1364210100", "Kampf um Neuseeland", "4" ],
+	[ "WDR", "125", "31004", "31", "1537", "1364205900", "1364208900", "Papageien, Palmen & Co.", "1364208900", "1364211900", "Panda, Gorilla & Co.", "4" ],
+	[ "hessen fernsehen", "126", "31003", "31", "1537", "1364206800", "1364207700", "Das Römer-Experiment", "1364207700", "1364209200", "service: trends", "4" ],
+	[ "RBB Fernsehen", "127", "32004", "32", "1537", "1364205600", "1364208300", "rbb Praxis", "1364208300", "1364210100", "2 Mann für alle Gänge", "4" ],
+	[ "SF1 Schweizer Fernsehen", "128", "17005", "17", "1537", "1364206200", "1364209800", "Falluja", "1364209800", "1364211600", "Weniger ist mehr", "4" ],
+	[ "SF2 Schweizer Fernsehen", "129", "17006", "17", "1537", "1364204400", "1364207100", "Wege zum Glück", "1364207100", "1364209800", "Alisa", "4" ],
+	[ "arte", "130", "4007", "4", "1537", "1364204700", "1364207700", "Arte Reportage", "1364207700", "1364209500", "Wie das Land, so der ...", "4" ],
+	[ "ORF 2 Steiermark", "134", "2008", "2", "1537", "1364205600", "1364208300", "Alisa", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "ORF 2 Kärnten", "135", "2009", "2", "1537", "1364205600", "1364208300", "Alisa", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "ORF 2 Nö", "136", "1003", "1", "1537", "1364205600", "1364208300", "Alisa", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "ORF 2 Oberösterreich", "137", "3004", "3", "1537", "1364205600", "1364208300", "Alisa", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "ORF 2 Burgenland", "138", "3006", "3", "1537", "1364205600", "1364208300", "Alisa", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "ORF 2 Salzburg", "139", "3005", "3", "1537", "1364205600", "1364208300", "Alisa", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "ORF 2 Vorarlberg", "140", "4009", "4", "1537", "1364205600", "1364208300", "Alisa", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "ORF 2 Tirol", "141", "4008", "4", "1537", "1364205600", "1364208300", "Alisa", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "ORF 2 EUROPA", "142", "2010", "2", "1537", "1364202900", "1364208300", "Teletexttafel", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "13TH STREET", "201", "24003", "24", "1537", "1364206200", "1364208900", "Navy CIS: L.A.", "1364208900", "1364211900", "Navy CIS: L.A.", "4" ],
+	[ "Syfy", "202", "23006", "23", "1537", "1364203800", "1364209500", "Thor - Der Allmächtige", "1364209500", "1364212200", "Sanctuary", "4" ],
+	[ "Kinowelt TV", "203", "6005", "6", "1537", "1364200500", "1364207100", "Shanghai Knights", "1364207100", "1364214600", "Cotton Club", "4" ],
+	[ "RTL Crime", "204", "24004", "24", "1537", "1364204100", "1364207100", "Fürchte Deinen Nächsten!", "1364207100", "1364210100", "Spurenermittler im ...", "4" ],
+	[ "RTL Passion", "205", "24005", "24", "1537", "1364206800", "1364209500", "Glee", "1364209500", "1364212200", "Models Inc.", "4" ],
+	[ "MGM", "206", "16004", "16", "1537", "1364203800", "1364209500", "Der zehnte Mann", "1364209500", "1364213700", "In Tombstone ist der", "4" ],
+	[ "Romance TV", "207", "6006", "6", "1537", "1364206800", "1364208300", "Eine für alle", "1364208300", "1364211000", "Fünf Sterne", "4" ],
+	[ "TNT Serie", "208", "24007", "24", "1537", "1364205000", "1364207700", "Mord ist ihr Hobby", "1364207700", "1364210400", "Mord ist ihr Hobby", "4" ],
+	[ "TELE 5", "209", "6001", "6", "1537", "1364194800", "1364214600", "Dauerwerbesendung", "1364214600", "1364217600", "Star Trek: Das nächste Jh", "4" ],
+	[ "FOX", "210", "24006", "24", "1537", "1364206200", "1364208900", "Drop Dead Diva", "1364208900", "1364211600", "Navy CIS", "4" ],
+	[ "Sky Krimi", "211", "24002", "24", "1537", "1364205300", "1364208000", "SOKO Leipzig", "1364208000", "1364210700", "Verdict Revised", "4" ],
+	[ "ORF eins HD", "240", "5001", "5", "1537", "1364202000", "1364209200", "Kokowääh", "1364209200", "1364210700", "Die Schlümpfe", "4" ],
+	[ "ORF 2 HD", "241", "5002", "5", "1537", "1364205600", "1364208300", "Alisa", "1364208300", "1364211000", "Bürgeranwalt", "4" ],
+	[ "arte HD", "242", "31002", "31", "1537", "1364204700", "1364207700", "Arte Reportage", "1364207700", "1364209500", "Wie das Land, so der ...", "4" ],
+	[ "Das Erste HD", "243", "31001", "31", "1537", "1364205900", "1364209200", "ARD-Buffet", "1364209200", "1364210100", "Tagesschau", "4" ],
+	[ "ZDF HD", "244", "27002", "27", "1537", "1364206500", "1364209200", "SOKO Köln", "1364209200", "1364209800", "Heute", "4" ],
+	[ "Servus TV HD", "245", "19003", "19", "1537", "1364205600", "1364207400", "Aus dem Leben", "1364207400", "1364208900", "Wohl bekomm's", "4" ],
+	[ "PULS 4 HD", "246", "30004", "30", "1537", "1364205900", "1364209200", "WIFF! Österreich", "1364209200", "1364212500", "Unsere kleine Farm", "4" ],
+	[ "ProSieben HD", "247", "30002", "30", "1537", "1364206500", "1364213700", "She's the Man", "1364213700", "1364215500", "Scrubs - Die Anfänger", "4" ],
+	[ "SAT.1 HD", "248", "30001", "30", "1537", "1364205600", "1364209200", "Richterin Barbara Salesch", "1364209200", "1364212800", "Richter Alexander Hold", "4" ],
+	[ "kabel eins HD", "249", "30003", "30", "1537", "1364205600", "1364209200", "Ghost Whisperer", "1364209200", "1364212500", "Cold Case", "4" ],
+	[ "Eurosport HD", "265", "25001", "25", "1537", "1364203800", "1364207400", "World Snooker Main Tour", "1364207400", "1364211000", "Skispringen", "4" ],
+	[ "Sport1+ HD", "266", "26010", "26", "1537", "1364206200", "1364217000", "Tennis - ATP World Tour", "1364217000", "1364223300", "Basketball - NBA", "4" ],
+	[ "Syfy HD", "267", "25002", "25", "1537", "1364203800", "1364209500", "Thor - Der Allmächtige", "1364209500", "1364212200", "Sanctuary", "4" ],
+	[ "13TH STREET HD", "268", "9006", "9", "1537", "1364206200", "1364208900", "Navy CIS: L.A.", "1364208900", "1364211900", "Navy CIS: L.A.", "4" ],
+	[ "TNT Serie HD", "269", "17004", "17", "1537", "1364205000", "1364207700", "Mord ist ihr Hobby", "1364207700", "1364210400", "Mord ist ihr Hobby", "4" ],
+	[ "FOX HD", "270", "25003", "25", "1537", "1364206200", "1364208900", "Drop Dead Diva", "1364208900", "1364211600", "Navy CIS", "4" ],
+	[ "RTL Crime HD", "271", "21001", "21", "1537", "1364204100", "1364207100", "Fürchte Deinen Nächsten!", "1364207100", "1364210100", "Spurenermittler im ...", "4" ],
+	[ "Kinowelt TV HD", "272", "19001", "19", "1537", "1364200500", "1364207100", "Shanghai Knights", "1364207100", "1364214600", "Cotton Club", "4" ],
+	[ "Discovery Channel HD", "273", "28002", "28", "1537", "1364205900", "1364208300", "London Garage", "1364208300", "1364211300", "Dirty Jobs", "4" ],
+	[ "Nat Geo HD", "274", "29002", "29", "1537", "1364206500", "1364209500", "Megabauwerke", "1364209500", "1364212500", "Reise durch die ...", "4" ],
+	[ "Planet HD", "275", "19002", "19", "1537", "1364205000", "1364208000", "Katastrophen der ...", "1364208000", "1364209800", "Globe Destinations", "4" ],
+	[ "RTL Living HD", "276", "21003", "21", "1537", "1364206800", "1364209800", "Hestons Festmahle", "1364209800", "1364212500", "Das perfekte Dinner", "4" ],
+	[ "Romance TV HD", "277", "20009", "20", "1537", "1364206800", "1364208300", "Eine für alle", "1364208300", "1364211000", "Fünf Sterne", "4" ],
+	[ "RTL Passion HD", "278", "21002", "21", "1537", "1364206800", "1364209500", "Glee", "1364209500", "1364212200", "Models Inc.", "4" ],
+	[ "Fashion-TV HD", "279", "33002", "33", "1537", "1364205600", "1364207400", "Monthly Highlights", "1364207400", "1364208900", "Monthly Highlights", "4" ],
+	[ "Bongusto HD", "280", "9007", "9", "1537", "1364204100", "1364207700", "Hairy Bikers - Rückkehr", "1364207700", "1364209200", "Zart & Saftig: Die ...", "4" ],
+	[ "Classica HD", "281", "24012", "24", "1537", "1364205300", "1364210100", "Bruckner", "1364210100", "1364211900", "Intermezzo", "4" ],
+	[ "3sat HD", "282", "32001", "32", "1537", "1364202900", "1364210100", "Tietjen und Hirschhausen", "1364210100", "1364211900", "sonntags", "4" ],
+	[ "ZDF neo HD", "283", "27003", "27", "1537", "1364204100", "1364208000", "Lanz kocht", "1364208000", "1364210700", "Lafer! Lichter! Lecker!", "4" ],
+	[ "BR HD", "284", "33001", "33", "1537", "1364202300", "1364207700", "WinterStar 2013", "1364207700", "1364209800", "freizeit", "4" ],
+	[ "KI.KA HD", "285", "32002", "32", "1537", "1364206500", "1364208000", "Wickie", "1364208000", "1364209500", "Das Green Team", "4" ],
+	[ "Cartoon Network HD", "286", "20008", "20", "1537", "1364206800", "1364208000", "Skatoony", "1364208000", "1364208720", "Regular Show", "4" ],
+	[ "Auto Motor und Sport Channel", "295", "13007", "13", "1537", "1364205300", "1364208000", "auto motor und sport TV", "1364208000", "1364209500", "1886 - Legenden der ...", "4" ],
+	[ "DMAX", "296", "6004", "6", "1537", "1364206500", "1364210100", "Mythbusters", "1364210100", "1364213700", "Die Ludolfs", "4" ],
+	[ "Eurosport", "301", "4005", "4", "1537", "1364203800", "1364207400", "World Snooker Main Tour", "1364207400", "1364211000", "Skispringen", "4" ],
+	[ "Eurosport 2", "302", "26001", "26", "1537", "1364203800", "1364207400", "Motorsport: FIA WTCC", "1364207400", "1364211000", "Motorsport: FIA WTCC", "4" ],
+	[ "ESPN America", "303", "20003", "20", "1537", "1364205600", "1364212800", "College Lacrosse...", "1364212800", "1364214600", "NCAA Championships...", "4" ],
+	[ "ESPN Classic", "304", "8005", "8", "1537", "1364205600", "1364209200", "30 for 30", "1364209200", "1364212800", "Behind the Fights", "4" ],
+	[ "Sport 1", "305", "4006", "4", "1537", "1364205600", "1364207400", "Normal", "1364207400", "1364218200", "Teleshopping", "4" ],
+	[ "Extreme Sports Channel", "306", "12001", "12", "1537", "1364204100", "1364207400", "Pro Bull Riders 2012", "1364207400", "1364208900", "Pinks:lose The Race-Lose Your Ride S3 Ep 11", "4" ],
+	[ "ORF Sport+", "307", "3007", "3", "1537", "1364206500", "1364217300", "Tischtennis", "1364217300", "1364223600", "Handball Liga Austria", "4" ],
+	[ "Eurosport Polska", "308", "26004", "26", "1537", "1364196600", "1364207400", "Snooker", "1364207400", "1364211000", "Skoki narciarskie", "4" ],
+	[ "Eurosport Turkce", "309", "12003", "12", "1537", "1364203800", "1364207400", "Cin Acik Snooker", "1364207400", "1364211000", "Kayakla Atlama", "4" ],
+	[ "Eurosport Srbija", "310", "26002", "26", "1537", "1364203800", "1364207400", "Snuker", "1364207400", "1364211000", "Ski skokovi", "4" ],
+	[ "Eurosport 2 Srbija", "311", "26003", "26", "1537", "1364203800", "1364207400", "FIA WTCC", "1364207400", "1364211000", "FIA WTCC", "4" ],
+	[ "QVC", "340", "1008", "1", "1537", "1364205600", "1364209200", "AQUA CLEAN!", "1364209200", "1364212800", "Karins Bastelideen ...", "4" ],
+	[ "HSE24", "341", "4012", "4", "1537", "1364205600", "1364209200", "Beate Johnen - Kosmetik", "1364209200", "1364212800", "Helena Vera Kombimode", "4" ],
+	[ "123.tv", "342", "20006", "20", "1537", "1364205600", "1364209200", "SchuhWerk", "1364209200", "1364212800", "SchmuckGala", "4" ],
+	[ "HSE24 Extra", "343", "8001", "8", "1537", "1364162400", "1364238000", "Paradessa leuchtende ...", "1364238000", "1364241600", "Kochen leicht gemacht", "4" ],
+	[ "RTL Living", "350", "13008", "13", "1537", "1364206800", "1364209800", "Hestons Festmahle", "1364209800", "1364212500", "Das perfekte Dinner", "4" ],
+	[ "E! Entertainment", "351", "19004", "19", "1537", "1364206500", "1364212200", "E! True Hollywood Story", "1364212200", "1364213100", "E! News Germany", "4" ],
+	[ "Fashion-TV", "352", "33004", "33", "1537", "1364205600", "1364207400", "Monthly Highlights", "1364207400", "1364208900", "Monthly Highlights", "4" ],
+	[ "CBS Reality", "353", "12002", "12", "1537", "1364205600", "1364207100", "Judge Judy (Season 5)", "1364207100", "1364208600", "Judge Judy (Season 5)", "4" ],
+	[ "Das Vierte", "354", "20007", "20", "1537", "1364205600", "1364209200", "Deutschland hilft", "1364209200", "1364216400", "Das Vierte Lebensberatung", "4" ],
+	[ "KI.KA", "401", "4010", "4", "1537", "1364206500", "1364208000", "Wickie", "1364208000", "1364209500", "Das Green Team", "4" ],
+	[ "NICK/Comedy Central", "402", "1011", "1", "1537", "1364205600", "1364207400", "Johnny Test", "1364207400", "1364208900", "Cosmo & Wanda", "4" ],
+	[ "Super RTL", "403", "4004", "4", "1537", "1364202600", "1364211900", "Go Wild! Rettet ...", "1364211900", "1364213700", "Käpt'n Balu und seine ...", "4" ],
+	[ "yourfamilyentertainment", "404", "7009", "7", "1537", "1364205600", "1364207400", "Landmaus und Stadtmaus", "1364207400", "1364208180", "Die Herlufs", "4" ],
+	[ "Baby TV", "406", "33003", "33", "1537", "1364205600", "1364207400", "Erforschen mit BabyHood", "1364207400", "1364209200", "Emmas Theater und ...", "4" ],
+	[ "JIM JAM", "407", "9005", "9", "1537", "1364206020", "1364207400", "Jakers!", "1364207400", "1364208000", "Bob, der Baumeister", "4" ],
+	[ "Nick Junior", "408", "7010", "7", "1537", "1364206500", "1364208000", "Ni Hao, Kai-Lan", "1364208000", "1364209500", "Go, Diego, go!", "4" ],
+	[ "Cartoon Network", "409", "6007", "6", "1537", "1364206800", "1364208000", "Skatoony", "1364208000", "1364208720", "Regular Show", "4" ],
+	[ "RiC", "410", "29006", "29", "1537", "1364206680", "1364207340", "Riesenärger mit Ralf", "1364207340", "1364209200", "George Shrinks", "4" ],
+	[ "n-tv", "501", "3011", "3", "1537", "1364206200", "1364207400", "Telebörse", "1364207400", "1364208000", "Nachrichten", "4" ],
+	[ "Euronews", "502", "4011", "4", "1537", "1364205600", "1364209200", "News and Lifestyle", "1364209200", "1364212800", "News and Lifestyle", "4" ],
+	[ "BBC World", "503", "17007", "17", "1537", "1364205600", "1364207400", "BBC World News", "1364207400", "1364209200", "HARDtalk", "4" ],
+	[ "CNN", "504", "3010", "3", "1537", "1364205600", "1364207400", "BackStory", "1364207400", "1364209200", "CNN NewsCenter", "4" ],
+	[ "CNBC", "505", "7001", "7", "1537", "1364205600", "1364216400", "US Squawk Box", "1364216400", "1364227200", "Squawk on the Street", "4" ],
+	[ "Russia today", "506", "12006", "12", "1537", "1364205600", "1364207400", "Headline News", "1364207400", "1364209200", "RT Documentaries", "4" ],
+	[ "CCTV News", "507", "18008", "18", "1537", "1364205600", "1364207400", "Africa Live", "1364207400", "1364209200", "Culture Express", "4" ],
+	[ "Bloomberg Europe TV", "510", "7004", "7", "1537", "1364205600", "1364209200", "The Pulse", "1364209200", "1364212800", "Bloomberg Surveillance", "4" ],
+	[ "Al Jazeera", "511", "18004", "18", "1537", "1364205600", "1364209200", "Newshour", "1364209200", "1364211000", "News", "4" ],
+	[ "France 24", "512", "26005", "26", "1537", "1364206500", "1364207100", "A la une", "1364207100", "1364207400", "Les arts de vivre", "4" ],
+	[ "24 Vesti news", "513", "18002", "18", "1537", "1364206800", "1364207400", "Sport", "1364207400", "1364207700", "Vesti", "4" ],
+	[ "Discovery Channel", "530", "23004", "23", "1537", "1364205900", "1364208300", "London Garage", "1364208300", "1364211300", "Dirty Jobs", "4" ],
+	[ "History Channel", "531", "6009", "6", "1537", "1364205600", "1364209200", "Die Deutschen", "1364209200", "1364212800", "Ägypten - Geburt ...", "4" ],
+	[ "National Geographic", "532", "23005", "23", "1537", "1364206500", "1364209500", "Megabauwerke", "1364209500", "1364212500", "Reise durch die ...", "4" ],
+	[ "The Biography Channel", "533", "6008", "6", "1537", "1364202000", "1364207400", "Elizabeth Taylor", "1364207400", "1364209200", "Chat mit Shatner", "4" ],
+	[ "Animal Planet", "534", "13006", "13", "1537", "1364205600", "1364208300", "Einsatz in New York", "1364208300", "1364209800", "Kinostars", "4" ],
+	[ "Planet", "535", "17003", "17", "1537", "1364205000", "1364208000", "Katastrophen der ...", "1364208000", "1364209800", "Globe Destinations", "4" ],
+	[ "PHOENIX", "536", "14005", "14", "1537", "1364202900", "1364207400", "THEMA", "1364207400", "1364209200", "Nacht über Deutschland", "4" ],
+	[ "tagesschau24", "537", "14001", "14", "1537", "1364198400", "1364238000", "Tagesschau-Nachrichten", "1364238000", "1364238900", "Tagesschau", "4" ],
+	[ "EinsFestival", "538", "14002", "14", "1537", "1364205600", "1364208300", "Mord ist ihr Hobby", "1364208300", "1364209500", "Seconde Chance", "4" ],
+	[ "EinsPlus", "539", "14003", "14", "1537", "1364206500", "1364208300", "Tim Mälzer kocht!", "1364208300", "1364210100", "Käse und Wein vom Besten", "4" ],
+	[ "BR-alpha", "540", "18007", "18", "1537", "1364205600", "1364208300", "Oma bleibt in Thailand", "1364208300", "1364209200", "Der bayerischen ...", "4" ],
+	[ "ZDFinfokanal", "541", "9001", "9", "1537", "1364206500", "1364209200", "Ursprung der Technik", "1364209200", "1364211900", "Mysterien der Menschheit", "4" ],
+	[ "ZDF neo", "542", "9002", "9", "1537", "1364204100", "1364208000", "Lanz kocht", "1364208000", "1364210700", "Lafer! Lichter! Lecker!", "4" ],
+	[ "ZDF.kultur", "543", "9003", "9", "1537", "1364204400", "1364207100", "Martina Schwarzmann", "1364207100", "1364208900", "Nils Heinrich", "4" ],
+	[ "gotv", "601", "1006", "1", "1537", "1364194800", "1364212800", "early enough", "1364212800", "1364216400", "at home", "4" ],
+	[ "MTV", "602", "19005", "19", "1537", "1364205600", "1364209200", "Top 11 at 11", "1364209200", "1364212800", "The Supercharts", "4" ],
+	[ "VIVA", "603", "1012", "1", "1537", "1364202000", "1364207400", "Music", "1364207400", "1364211000", "VIVA Austria Top 20", "4" ],
+	[ "MTV Rocks", "606", "13005", "13", "1537", "1364202000", "1364218200", "50 Stadium Fillers", "1364218200", "1364218500", "You Me At Six: Brand N...", "4" ],
+	[ "MTV Dance", "607", "13002", "13", "1537", "1364202000", "1364208000", "20 Biggest Tracks", "1364208000", "1364214600", "Big Tunes!", "4" ],
+	[ "MTVhits!", "608", "13001", "13", "1537", "1364205600", "1364209200", "10 Biggest Tracks", "1364209200", "1364212800", "Katy: From the Beginning", "4" ],
+	[ "VH-1 Europe", "609", "13003", "13", "1537", "1364205600", "1364212800", "90s vs 80s", "1364212800", "1364216400", "Guess the Year", "4" ],
+	[ "VH-1 Classic", "610", "13004", "13", "1537", "1364205600", "1364212800", "We Are The 80s", "1364212800", "1364216400", "Smells Like the 90s", "4" ],
+	[ "MCM Top", "611", "7002", "7", "1537", "1364198400", "1364209200", "Top Mix", "1364209200", "1364223600", "Top Mix", "4" ],
+	[ "Gute Laune TV", "612", "7008", "7", "1537", "1364205600", "1364209200", "Hubsis Welt", "1364209200", "1364212800", "Ohrwürmer", "4" ],
+	[ "BBC Entertainment", "650", "8003", "8", "1537", "1364206800", "1364209800", "Casualty", "1364209800", "1364212800", "Himalaya with Palin", "4" ],
+	[ "TV5Monde Europe", "651", "1009", "1", "1537", "1364205900", "1364207400", "Foudre", "1364207400", "1364209200", "Plus belle la vie", "4" ],
+	[ "RAI Uno", "652", "1010", "1", "1537", "1364205900", "1364209200", "Unomattina Storie Vere", "1364209200", "1364214600", "La prova del cuoco", "4" ],
+	[ "RAI Due", "653", "8002", "8", "1537", "1364205600", "1364212800", "I fatti vostri", "1364212800", "1364214600", "TG2 Giorno", "4" ],
+	[ "TVE", "654", "18005", "18", "1537", "1364202900", "1364216400", "La mañana de La 1", "1364216400", "1364218200", "Para todos La 2", "4" ],
+	[ "RTR Planeta", "658", "18001", "18", "1537", "1364205600", "1364207100", "Vesti", "1364207100", "1364207700", "Vesti-Sport", "4" ],
+	[ "EDTV 1", "659", "8010", "8", "1537", "1364205600", "1364209200", "Maa Osama atiab", "1364209200", "1364212800", "Awdat Mohaned - Mossalsal", "4" ],
+	[ "CCTV4", "660", "19006", "19", "1537", "1364206500", "1364209200", "Diàn Shì Jù", "1364209200", "1364210220", "Zhong Guo Xin Ween", "4" ],
+	[ "HRT TV 1", "661", "7007", "7", "1537", "1364206200", "1364207580", "Preuredi pa prodaj!", "1364207580", "1364209200", "Preuredi pa prodaj!", "4" ],
+	[ "RTS Sat", "663", "30005", "30", "1537", "1364205900", "1364207400", "Slagalica", "1364207400", "1364209200", "Srbija na vezi", "4" ],
+	[ "TV Polonia", "665", "27004", "27", "1537", "1364205300", "1364207700", "Tygodnik.pl", "1364207700", "1364208000", "Pogoda", "4" ],
+	[ "Polsat 2", "666", "13010", "13", "1537", "1364205600", "1364207400", "Rodzina zastepcza", "1364207400", "1364209200", "Synowie, czyli...", "4" ],
+	[ "Duna TV", "667", "7005", "7", "1537", "1364205600", "1364209200", "Klubszoba", "1364209200", "1364209320", "Deeli harangszo", "4" ],
+	[ "TRT International", "668", "2011", "2", "1537", "1364205900", "1364208600", "Istanbul'un Sehirleri", "1364208600", "1364209200", "Tuvaldeki Turkiye", "4" ],
+	[ "Turkmax", "670", "12004", "12", "1537", "1364194800", "1364211300", "Her Sey Tadinda", "1364211300", "1364214300", "Her Sey Saglikta", "4" ],
+	[ "Show TV", "671", "12008", "12", "1537", "1364204700", "1364213700", "Saba Tumer ile Bugun", "1364213700", "1364218200", "Bence Benim Annem", "4" ],
+	[ "Powerturk TV", "672", "12007", "12", "1537", "1364198400", "1364207100", "%100 Hit", "1364207100", "1364210700", "Muzik Haber", "4" ],
+	[ "Lig TV", "673", "12005", "12", "1537", "1364205600", "1364208300", "Quiz: Olcay Sahan", "1364208300", "1364209200", "Bir Yildiz On Gol", "4" ],
+	[ "Hayat", "685", "14006", "14", "1537", "1364205600", "1364208300", "Apel Mevludin Terzic", "1364208300", "1364209140", "Vijesti u 7", "4" ],
+	[ "Pink Plus", "686", "26006", "26", "1537", "1364203800", "1364209200", "Trenutak istine", "1364209200", "1364212800", "City news", "4" ],
+	[ "Pink Extra", "687", "26007", "26", "1537", "1364205600", "1364214900", "Pink dzuboks", "1364214900", "1364215200", "Info TOP", "4" ],
+	[ "Pink Film", "688", "26008", "26", "1537", "1364204700", "1364211000", "Cudo nevidjeno", "1364211000", "1364216400", "Miris poljskog cveca", "4" ],
+	[ "Pink Music", "689", "26009", "26", "1537", "1364166000", "1364252400", "Pink Music", "1364252400", "1364338800", "Pink Music", "4" ],
+	[ "Disney Channel", "730", "23007", "23", "1537", "1364205900", "1364207400", "Binny und der Geist", "1364207400", "1364208600", "Pound Puppies", "4" ],
+	[ "Disney XD", "731", "23008", "23", "1537", "1364206800", "1364208300", "Pair of Kings", "1364208300", "1364209500", "Disneys American Dragon", "4" ],
+	[ "Disney Junior", "732", "23009", "23", "1537", "1364206200", "1364207100", "Zeo", "1364207100", "1364208000", "Zeo", "4" ],
+	[ "Sky Atlantic HD", "733", "29005", "29", "1537", "1364205600", "1364209200", "The Wire", "1364209200", "1364211000", "Entourage", "4" ],
+	[ "Sky Cinema HD", "734", "28003", "28", "1537", "1364199900", "1364207100", "Cheyenne - This Must ...", "1364207100", "1364212500", "Meeting Evil", "4" ],
+	[ "Sky Hits HD", "735", "22002", "22", "1537", "1364202600", "1364208900", "Die Hochzeit meines", "1364208900", "1364215800", "Timeline", "4" ],
+	[ "Disney Cinemagic HD", "736", "29001", "29", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364214900", "Sams in Gefahr", "4" ],
+	[ "Sky Cinema", "737", "15001", "15", "1537", "1364199900", "1364207100", "Cheyenne - This Must ...", "1364207100", "1364212500", "Meeting Evil", "4" ],
+	[ "Sky Cinema +1", "738", "15002", "15", "1537", "1364203500", "1364210700", "Cheyenne - This Must ...", "1364210700", "1364216100", "Meeting Evil", "4" ],
+	[ "Sky Cinema +24", "739", "15003", "15", "1537", "1364205300", "1364212500", "Die Haut, in der ich ...", "1364212500", "1364220000", "Best Exotic Marigold ...", "4" ],
+	[ "Sky Hits", "740", "16001", "16", "1537", "1364202600", "1364208900", "Die Hochzeit meines", "1364208900", "1364215800", "Timeline", "4" ],
+	[ "Sky Action", "741", "15004", "15", "1537", "1364202600", "1364210100", "Hellboy", "1364210100", "1364218500", "Eine Frage der Ehre", "4" ],
+	[ "Sky Emotion", "742", "15006", "15", "1537", "1364204100", "1364210100", "Dirty Dancing", "1364210100", "1364218500", "Jimmy Hoffa", "4" ],
+	[ "Sky Nostalgie", "743", "16002", "16", "1537", "1364203500", "1364208600", "Kommissar X: Drei ...", "1364208600", "1364211600", "Bonanza", "4" ],
+	[ "Sky Comedy", "744", "15005", "15", "1537", "1364203800", "1364210400", "Knockin' on Heaven's Door", "1364210400", "1364216100", "Ein voll verrückter ...", "4" ],
+	[ "Disney Cinemagic", "745", "16003", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364214900", "Sams in Gefahr", "4" ],
+	[ "Sky Sport News HD", "750", "22001", "22", "1537", "1364198400", "1364209200", "Live Sky Sport News", "1364209200", "1364216400", "Live Sky Sport News", "4" ],
+	[ "Sky Sport HD 1", "751", "28001", "28", "1537", "1364202000", "1364209200", "Fußball: England", "1364209200", "1364216400", "Fußball: England", "4" ],
+	[ "Sky Sport HD 2", "752", "29004", "29", "1537", "1364205600", "1364209200", "Wrestling: WWE", "1364209200", "1364218200", "Golf: European Tour", "4" ],
+	[ "Sky Sport HD Extra", "753", "22003", "22", "1537", "1364202000", "1364209200", "Fußball: Bundesliga", "1364209200", "1364216400", "Fußball: Bundesliga", "4" ],
+	[ "Sky Sport News", "754", "16005", "16", "1537", "1364198400", "1364209200", "Live Sky Sport News", "1364209200", "1364216400", "Live Sky Sport News", "4" ],
+	[ "Sky Sport Austria", "755", "15011", "15", "1537", "1364205600", "1364212800", "Basketball: Österreich", "1364212800", "1364220000", "Fußball: Österreich", "4" ],
+	[ "Sky Sport 1", "756", "23001", "23", "1537", "1364205600", "1364209200", "UEFA Champions League", "1364209200", "1364212800", "UEFA Champions League", "4" ],
+	[ "Sky Sport 2", "757", "23002", "23", "1537", "1364205600", "1364209200", "Wrestling: WWE", "1364209200", "1364218200", "Golf: US PGA Tour", "4" ],
+	[ "Sky Sport 3", "758", "15007", "15", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Sport 4", "759", "18011", "18", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Sport 5", "760", "18009", "18", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Sport 6", "761", "16014", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Sport 7", "762", "16012", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Sport 8", "763", "16010", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Sport 9", "764", "16008", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Sport 10", "765", "15009", "15", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Sport 11", "766", "16006", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Sport 12", "767", "24010", "24", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Sport 13", "768", "24011", "24", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga", "770", "23003", "23", "1537", "1364204700", "1364211900", "Fußball: 2. Bundesliga", "1364211900", "1364219100", "Fußball: 2. Bundesliga", "4" ],
+	[ "Sky Bundesliga 1", "771", "15010", "15", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga 2", "772", "16007", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga 3", "773", "16009", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga 4", "774", "16011", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga 5", "775", "16013", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga 6", "776", "16015", "16", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga 7", "777", "18010", "18", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga 8", "778", "18012", "18", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga 9", "779", "24008", "24", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga 10", "780", "24009", "24", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Sky Bundesliga 11", "781", "15008", "15", "1537", "1364166000", "1364209200", "Derzeit keine Sendung", "1364209200", "1364252400", "Derzeit keine Sendung", "4" ],
+	[ "Playboy TV", "790", "8004", "8", "1537", "1364187600", "1364248800", "Channel Off Air", "1364248800", "1364250300", "Playmate Guide To The ...", "4" ],
+	[ "Hustler TV", "792", "8006", "8", "1537", "1364204760", "1364209920", "Best New Starlets 2012", "1364209920", "1364214300", "Young Pink & Wet", "4" ],
+];
+
+//TEST STEPS
+var idTestProcess=""; //variable to display log on WeBiz screen
+window.onload = function(){
+	kernel.require(
+		'./Libs/EITpfQuery.js',
+		function(){ 
+			webiz.move( 100, 100 );
+			webiz.resize( 600, 600 );
+			webiz.hide();
+			Utilities.print(testName);
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.
+			EITpfQuery.compareLists(homingChannel,
+									serviceList,
+									ServiceType,
+									expectedServiceList,
+									timeout,
+									fieldsToDelete);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide(); 
+            jbiz.writeLine("WARN:'./Libs/EITpfQuery.js' is not uploaded.'");
+            setTimeout(function(){jbiz.exit()},3000)
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

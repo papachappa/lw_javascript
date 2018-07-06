@@ -1,0 +1,113 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+
+//TEST SETTINGS
+var testName = "EPG verification";
+
+//Open EPG menu
+var openEPGmenu = YES;
+
+/*Navigation trough EPG menu in format 
+[openEPGmenu, startDirection, down, stepDown, up, stepUp, stepForward]:
+
+ - openEPGmenu:      is open EPG menu or not (YES or NO)
+ - startDirection:   is start direction for navigation ('Down' or 'Up')
+ - down:             is quantity of pressing Down*stepDown + stepForward*Forward
+ - stepDown:         is quantity of pressing Down per one step
+ - up:               is quantity of pressing Up*stepUp + stepForward*Forward
+ - stepUp:           is quantity of pressing Up per one step
+ - stepForward:      is quantity of pressing Forward per one step
+ 
+EPG navigation can be skipped, in this case use variable openEPGmenu instead of
+EPGnavigation in GetEPGdata.startTest function.
+*/
+var EPGnavigation = [openEPGmenu, 'Up', 45, 4, 2, 4, 4]
+
+  /* List of services under test
+   * - channelNumber: channel number
+   * - mediaType: media type of required services
+   * - servicesList: name of services list where channel is present
+   * See example:
+   * var services = [
+   *      [1, MediaType.TV, "DVB-S"],
+   *      [8, MediaType.TV, "DVB-S"],
+   *      [3, MediaType.RADIO "DVB-S"],
+   * ];
+ */
+  var services = [
+      [1, MediaType.TV, "ASTRA1 19,2°E"],
+      [2, MediaType.TV, "ASTRA1 19,2°E"]
+  ];
+
+    /* Filters for EPG requests
+     * All keys in JS are interpreted as strings, therefore it's necessary
+     * to add elements in index notation.
+     * Example:
+     * var filters = {};
+     * filters[EPG.START_TIME] = 1422543000;
+     * filters[EPG.END_TIME] = 1422544800;
+     * filters[EPG.TITLE] = "Benedict";
+     */
+  var filters = {};
+  filters[EPG.START_TIME] = 1423483200,
+  filters[EPG.END_TIME] = 1423501200;
+
+  /* Optional fields
+   * Service DVB triplet and event ID are always present in test result.
+   * Optional fields are appended to the mandatory ones. Note: expected result
+   * should have next form: [SID, TSID, ONID, EID, optional fields in the same
+   * order as specified in the optionalFields variable]
+   * Example:
+   * var optionalFields = [EPG.TITLE, EPG.RATING];
+   */
+  var optionalFields = [EPG.TITLE];
+
+  // Expected result
+  var expectedResult = [
+      [10301, 1019, 1, 31089],
+      [10302, 1019, 1, 31040]
+  ];
+
+//TEST INITIALISATION
+
+var idTestProcess="";
+window.onload = function(){
+    kernel.require('./Libs/GetEPGdata.js',
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+            webiz.hide();
+            Utilities.print(testName);
+            GetEPGdata.startTest(services,
+                                 filters,
+                                 optionalFields,
+                                 expectedResult,
+                                 EPGnavigation);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+            webiz.hide();
+            jbiz.writeLine("WARN: './Libs/GetEPGdata.js' is not uploaded.");
+            setTimeout(function(){jbiz.exit()}, 3000);
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

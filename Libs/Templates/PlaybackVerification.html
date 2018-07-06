@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>     
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script>
+ 
+//TV SETTINGS 
+var testName = "Playback verification";
+
+/* - servicesList: name of services list where channel should be found.
+   - channelNumber: channel number for zapping.
+     if parameter is omitted, channel change will not be executed
+   - mediaType: media type of required services
+     (4- TV, 8-radio) or use enumerator value
+   - playback: playback ability (1 - available, 0 - not available)
+   
+   See example:
+ */  
+var checkChannels= [
+//playback verification without channel change 
+    { 
+        servicesList: "DVB-T", 
+        channelNumber: "",
+        mediaType: "",
+        playback: 1, 
+    },
+//playback verification without channel change 
+    {
+        playback: 1, 
+    },
+//playback verification after channel change to TV service with 
+//channel number 1 from services list "DVB-T"  
+    { 
+        servicesList: "DVB-T", 
+        channelNumber: 1,
+        mediaType: MediaType.TV,
+        playback: 1, 
+    },
+//verification that playback is not available after channel change 
+// to Radio service with channel number 851 from services list "Test"
+    { 
+        servicesList: "Test", 
+        channelNumber: 851,
+        mediaType: MediaType.Radio,
+        playback: 0, 
+    },
+//playback verification after channel change to TV service with 
+//channel number 1 from services list "DVB-T" 
+    { 
+        servicesList: "DVB-T", 
+        channelNumber: 1,
+        mediaType: 4,
+        playback: 1, 
+    }
+]; 
+
+//TEST INITIALISATION  
+  
+var idTestProcess="";
+window.onload = function(){
+    kernel.require('./Libs/ZapCheckPlayback.js',
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            Utilities.print(testName);            
+            ZapCheckPlayback.startTest(checkChannels)
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide(); 
+            jbiz.writeLine("WARN: './Libs/ZapCheckPlayback.js' is not uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }                       
+    );
+};            
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

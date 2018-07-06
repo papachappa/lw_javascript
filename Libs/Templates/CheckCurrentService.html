@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+
+//TEST SETTINGS
+var testName = "Check current service";
+
+/* 
+If all parameters of DVB triplet are skiped, then service won't be checked,
+playback verification will be done as the only test step.
+Any part of DVB triplet can be set as DO_NOT_CHECK/"DNC" and will be skipped
+from verification 
+*/
+var serviceID = 13134;
+var streamID = DO_NOT_CHECK;
+var networkID = 3;
+/* YES/1 - playback is available
+NO/0 - playback is not available
+DO_NOT_CHECK/"DNC" - verification will be skipped
+*/
+var playback = DO_NOT_CHECK;
+
+/*
+list of available streaming parameters:
+	"frontend",
+	"satid",
+	"frequency",
+	"modulation",
+	"symbolrate",
+	"bandwidth",
+	"coderate",
+	"plpid",
+	"datasliceid",
+	"inversion",
+	"polarization",
+	"band",
+	"modcod",
+	"dvbtpriority",
+	"onid",
+	"sid",
+	"tsid"
+*/
+
+var streamingParameters = {
+	frontend: 4,
+	satid: 6,
+	coderate: 6,
+	plpid: DO_NOT_CHECK,
+	datasliceid: DO_NOT_CHECK,
+	frequency: 11220075,
+	modulation: 2,
+	symbolrate:  27499,
+	inversion: 1,
+	polarization: 1,
+	band: 1,
+	dvbtpriority: DO_NOT_CHECK,
+};
+
+// in KHz
+var frequencyRange = 100;
+// in %
+var symbolrateRange = 1;
+
+var content = {
+	subtitle: {
+		exist: YES,
+		index: -1,
+		table: [
+					["-1", "#3005", "#3005", "0", "0", "0"],
+					["0","", "#3007", "0", "0", "0"]
+				],
+		languageFavoured: DO_NOT_CHECK,
+		languageAlternative: DO_NOT_CHECK,
+	},
+	audio:{
+		exist: YES,
+		index: -1,
+		table: [
+					["0","", "#3007", "0", "0", "0"]
+				],
+		languageFavoured: DO_NOT_CHECK,
+		languageAlternative: DO_NOT_CHECK
+	}
+};
+
+
+//TEST INITIALISATION
+var idTestProcess="";
+window.onload = function(){ kernel.require(
+	'./Libs/Scenarios/CheckCurrentService.js',
+	function(){
+		webiz.move( 100, 100 );
+		webiz.resize( 650, 600 );
+		webiz.hide();
+		Utilities.print(testName);
+		CheckCurrentService.startTest(serviceID,
+									  streamID,
+									  networkID,
+					                  playback,
+					                  streamingParameters,
+					                  frequencyRange,
+					                  symbolrateRange,
+					                  content);
+	},
+	function(){
+		webiz.move( 100, 100 );
+		webiz.resize( 650, 600 );
+		webiz.hide();
+		jbiz.writeLine(
+		 "WARN: './Libs/Scenarios/CheckCurrentService.js' is not uploaded.");
+		setTimeout(function(){jbiz.exit()}, 3000);
+	}
+);
+};
+
+</script>
+</head>
+<body>
+  <div style="float:left; width:100%; text-align:left;">
+    <div id='idTestProcess'></div>
+  </div>
+</body>
+</html>
+-

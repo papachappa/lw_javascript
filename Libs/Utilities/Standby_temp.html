@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>    
+<script src="../Enumerators.js"></script>     
+<script src="../kernel.js"></script>
+<script type="text/javascript"> 
+//TEST SETTINGS
+var sleepDuration = 420 //in sec
+
+<!--DO NOT CHANGE SCRIPT AFTER THIS LINE--!> 
+var idTestProcess=""; //variable to display log on WeBiz screen 
+
+window.onload = function(){
+    kernel.require(['../Utilities.js',
+                    '../Timer.js',
+                    '../PressButton.js'],
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 600, 600 );
+			webiz.hide();
+            manager(["Connect"])});
+};
+
+function manager(args) {
+
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["SetTimerToWakeUp"]); });
+        },
+        "SetTimerToWakeUp" : function(){
+            Timer.setAlarmOnceTimer(function(){ manager(["SwitchOffTV"]); },
+                                    function(){ manager(["EndTest"]); },
+                                    MediaType.TV,
+                                    sleepDuration);
+        },
+        "SwitchOffTV" : function(){
+            Utilities.print("Transfer TV to standby by pressing Power RC button...");
+            PressButton.singlePress(Key.OFF)
+            manager(["EndTest"])
+        },
+        "EndTest" : function() {
+            Utilities.print("Test finished.");
+            Utilities.endTest()
+        }
+    };
+    
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div id='idState' style="width:100%; text-align:center;">
+        Reboot TV - part1
+    </div>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

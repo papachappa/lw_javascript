@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta name="generator" content=
+"HTML Tidy for Linux (vers 25 March 2009), see www.w3.org" />
+<meta http-equiv="content-type" content=
+"text/html; charset=utf-8" />
+<title>WeBiz</title>
+
+<style type="text/css">
+/*<![CDATA[*/
+     body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+/*]]>*/
+</style>
+
+<script src="../webiz_tests/Libs/Enumerators.js" type=
+"text/javascript">
+</script>
+<script src="../webiz_tests/Libs/kernel.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+//<![CDATA[
+
+//TEST SETTINGS
+
+var testName ="DCM live scan";
+// Change to enumerator value
+//var DCMchannel = DO_NOT_CHANGE; //Skip zap and execute DCM on current channel
+var DCMchannel = ["2", MediaType.TV, "UPC"];
+var DCMFlow = DCMflow.LATER;
+var otherChannel = ["19", MediaType.TV, "UPC"];
+//EXPECTED SCAN RESULT
+
+/*
+  * Array containing scan states and required actions.
+  * Script will check that not described states were not observed
+  * during test execution.
+  * LCN CONFLICT
+  * 'serviceList' - array of all conflicted services (in any order). Each
+  * service should be described in format:
+  * [Name, ChNum, ServiceID, StreamID, NetID, Type, Visibility, Selectability]
+  * 'executeSwap' - array of required swaps.
+  * Swaps should be described in format:
+  * {type:1, chanNumbers:[1, 850]} where type - media type of services,
+  * chanNumbers - pare of channel numbers that should be swapped.
+  *
+  * UPDATED SERVICES
+  * 'newServices' and 'notfoundServices' have the same structure:
+  * 'serviceList' - array of all updated services (in any order). The same
+  * format as for lsn conflict.
+  * 'removeServices' - list of service index in 'serviceList' array
+  * that should be removed.
+  *
+  * You can use corresponding script from ./GetExpectedResult to get correct
+  * expected result.
+*/
+var expectedScanResult = {
+    lcnConflict: {},
+    newServices: {
+        serviceList:[
+            [ '2 Arte Belgique', '1', '2005', '2', '1537', '4', '1', '1' ],
+            [ '2 BBC Radio 1 c8 à é î õ ü À É Î Õ Ü ®', '1', '2053', '2', '1537', '8', '1', '1' ],
+            [ '1e TV guide Dummy 0', '2', '1020', '1', '1537', '4', '1', '1' ],
+            [ '1 Radio4 AC-3 C0/T EIT text', '2', '1052', '1', '1537', '8', '1', '1' ],
+            [ '1 BBC World C5/T EIT text', '3', '1017', '1', '1537', '4', '1', '1' ],
+            [ '1 3FM 1 test KRCS', '3', '1053', '1', '1537', '8', '1', '1' ],
+            [ '1 Een HD', '4', '1014', '1', '1537', '4', '1', '1' ],
+            [ '2 BBC World Service', '4', '2054', '2', '1537', '8', '1', '1' ],
+            [ '2 BBC1 (110)', '5', '2004', '2', '1537', '4', '1', '1' ],
+            [ '7 France Culture', '5', '7041', '7', '1537', '8', '1', '1' ],
+            [ '2 CNN', '6', '2001', '2', '1537', '4', '1', '1' ],
+            [ '7 France Muzique', '6', '7042', '7', '1537', '8', '1', '1' ],
+            [ '2 TVE', '7', '2007', '2', '1537', '4', '1', '1' ],
+            [ '7 BBC Radio 2', '7', '7043', '7', '1537', '8', '1', '1' ],
+            [ '3 TV5 Monde', '8', '3001', '3', '1537', '4', '1', '1' ],
+            [ '7 BBC Radio 1', '8', '7044', '7', '1537', '8', '1', '1' ],
+            [ '2 BBC1 TEST (142)', '9', '2098', '2', '1537', '4', '1', '1' ],
+            [ '7 France International', '9', '7040', '7', '1537', '8', '1', '1' ],
+            [ '3 RealityTV (142)', '10', '3006', '3', '1537', '4', '1', '1' ],
+            [ '3 TVE', '11', '3009', '3', '1537', '4', '1', '1' ],
+            [ '4 Recording', '12', '4001', '4', '1537', '4', '1', '1' ],
+            [ '7 RealityTV (142)', '13', '7001', '7', '1537', '4', '1', '1' ],
+            [ '7 BBC1 (110)', '14', '7002', '7', '1537', '4', '1', '1' ],
+            [ '7e Dummy', '15', '7004', '7', '1537', '4', '1', '1' ],
+            [ '7 BBC World', '16', '7005', '7', '1537', '4', '1', '1' ],
+            [ '7e BL_MGM teaser', '17', '7006', '7', '1537', '4', '1', '1' ],
+            [ '7e Selfcare', '18', '7018', '7', '1537', '4', '1', '1' ],
+            [ '7e TVG NL', '19', '7030', '7', '1537', '4', '1', '1' ],
+            [ '8 Recording', '20', '8002', '8', '1537', '4', '1', '1' ],
+            [ '8e H.264 Discovery HD (simulcrypt)', '21', '8004', '8', '1537', '4', '1', '1' ],
+            [ '8 BBC1 (142)', '22', '8006', '8', '1537', '4', '1', '1' ],
+            [ '8 TV5 Monde', '23', '8014', '8', '1537', '4', '1', '1' ],
+            [ '8 Arte Belgique', '24', '8015', '8', '1537', '4', '1', '1' ],
+            [ '5 RealityTV (142)', '25', '5002', '5', '1537', '4', '1', '1' ],
+            [ '1 CNN C0/B EIT text', '26', '1016', '1', '1537', '4', '1', '1' ],
+            [ '2 CNBC Europe', '27', '2006', '2', '1537', '4', '1', '1' ],
+            [ '8 BBC1 (110)', '28', '8005', '8', '1537', '4', '1', '1' ]
+        ],
+        removeServices:[]
+    },
+    unfoundServices: {
+        serviceList:[
+        ],
+        removeServices:[]
+    }
+  };
+
+/*
+ Number of TV and Radio services expected to be found during scan.
+  Values are mandatory.
+*/
+var numberTvServices = 487;
+var numberRadioServices = 197;
+
+//TEST INITIALISATION
+
+var idTestProcess="";
+window.onload = function(){
+    kernel.require([
+        './Libs/LiveDCM.js'
+    ],
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+            webiz.hide();
+            Utilities.print(testName);
+// DO NOT FORGET TO UPDATE THE FUNCTION CALL
+// IF YOU RENAMED OR REMOVED VARIABLES.
+            LiveDCM.startTest( DCMchannel,
+                               DCMFlow,
+                               otherChannel,
+                               expectedScanResult,
+                               numberTvServices,
+                               numberRadioServices
+                             );
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+            webiz.hide();
+            jbiz.writeLine("WARN: './Libs/LiveDCM.js' is not uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }
+    );
+};
+
+//]]>
+</script>
+</head>
+<body>
+<div style="float:left; width:100%; text-align:left;">
+<div id='idTestProcess'></div>
+</div>
+</body>
+</html>

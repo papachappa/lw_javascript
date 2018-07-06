@@ -1,0 +1,115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+
+//TEST SETTINGS
+var testName = "EPG verification";
+
+  /* List of services under test
+   * - channelNumber: channel number
+   * - mediaType: media type of required services
+   * - servicesList: name of services list where channel is present
+   * See example:
+   * var services = [
+   *      [1, MediaType.TV, "DVB-S"],
+   *      [8, MediaType.TV, "DVB-S"],
+   *      [3, MediaType.RADIO "DVB-S"],
+   * ];
+ */
+  var services = [
+      [1, MediaType.TV, "Ziggo"],
+      [2, MediaType.TV, "Ziggo"]
+  ];
+
+    /* Filters for EPG requests
+     * All keys in JS are interpreted as strings, therefore it's necessary
+     * to add elements in index notation.
+     * Example:
+     * var filters = {};
+     * filters[EPG.START_TIME] = 1422543000;
+     * filters[EPG.END_TIME] = 1422544800;
+     * filters[EPG.TITLE] = "Benedict";
+     */
+  var filters = {};
+  filters[EPG.END_TIME] = 1284526800;
+
+  /* Optional fields
+   * Service DVB triplet and event ID are always present in test result.
+   * Optional fields are appended to the mandatory ones. Note: expected result
+   * should have next form: [SID, TSID, ONID, EID, optional fields in the same
+   * order as specified in the optionalFields variable]
+   * Example:
+   * var optionalFields = [EPG.TITLE, EPG.RATING];
+   */
+  var optionalFields = [];
+
+  // Time of EPG update
+  var time = 1284553500;
+
+  // Expected result
+  // Before time of interest
+  var expectedResultBefore = [
+      [201, 29, 1000, 16770],
+      [201, 29, 1000, 16780],
+      [201, 29, 1000, 16781],
+      [201, 29, 1000, 16892],
+      [202, 29, 1000, 15605],
+      [202, 29, 1000, 15606],
+      [202, 29, 1000, 15607]
+ ];
+  // After time of interest
+  var expectedResultAfter = [
+      [201, 29, 1000, 16770],
+      [201, 29, 1000, 16780],
+      [201, 29, 1000, 16781],
+      [201, 29, 1000, 16892],
+      [202, 29, 1000, 15605],
+      [202, 29, 1000, 15606],
+      [202, 29, 1000, 15607]
+  ];
+
+//TEST INITIALISATION
+
+var idTestProcess="";
+window.onload = function(){
+    kernel.require('./Libs/GetUpdatedEPGdata.js',
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+            GetUpdatedEPGdata.startTest(services,
+                                        filters,
+                                        optionalFields,
+                                        time,
+                                        expectedResultBefore,
+                                        expectedResultAfter
+                                       );
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            jbiz.writeLine("WARN: './Libs/GetUpdatedEPGdata.js' is not "
+                           + "uploaded.");
+            setTimeout(function(){jbiz.exit()}, 3000);
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

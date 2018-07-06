@@ -1,0 +1,86 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../../Libs/Enumerators.js"></script>
+<script src="../../Libs/kernel.js"></script>
+<script type="text/javascript">
+
+var testName = "Select event in backward EPG";
+
+window.onload = function(){
+    kernel.require(['../../Libs/Utilities.js',
+                    '../../Libs/PressButton.js'],
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 600, 600 );
+            webiz.hide();
+            manager(["Connect"])});
+};
+
+function manager(args) {
+
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(
+                function() {
+                    manager(["SelectEventBEPG"]);
+                },
+                5000);
+        },
+        
+        "SelectEventBEPG" : function() {
+			Utilities.print("Select event from BEPG")
+			PressButton.pressWithWait(Key.END, 2000);
+			PressButton.pressWithWait(Key.END, 2000);
+			PressButton.pressWithWait(Key.EPG, 2000);
+			PressButton.pressWithWait(Key.CONTEXT_MENU, 2000);
+			PressButton.pressWithWait(Key.UP, 2000);
+			PressButton.pressWithWait(Key.UP, 2000);
+			PressButton.pressWithWait(Key.UP, 2000);
+			PressButton.pressWithWait(Key.UP, 2000);
+			PressButton.pressWithWait(Key.OK, 6000);
+			PressButton.pressWithWait(Key.OK, 2000);
+			
+			setTimeout( function() {
+				manager(["BackToEPG"]);
+			}, 2000);
+        },
+        
+        "BackToEPG" : function() {
+			var epgRequsted = de.loewe.sl2.i32.epg.schedule.requested;
+			PressButton.pressWithWait(Key.END, 2000);
+			if (epgRequsted.getValue() == 1) {
+				PressButton.pressWithWait(Key.END, 2000);
+				setTimeout( function() {
+					manager(["EndTest"]);
+				}, 2000);
+			}
+			else {
+				PressButton.pressWithWait(Key.END, 2000);
+				Utilities.print("#VERIFICATION FAILED: back to EPG menu was not performed.");
+				manager(["EndTest"]);
+			}
+        },
+        
+        "EndTest" : function() {
+            Utilities.print("Test finished.");
+            Utilities.printTestResult();
+            Utilities.endTest();
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

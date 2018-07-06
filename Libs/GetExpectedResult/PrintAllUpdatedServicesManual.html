@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../Enumerators.js"></script>
+<script src="../kernel.js"></script>
+<script type="text/javascript">
+<!--DO NOT CHANGE SCRIPT AFTER THIS LINE--!>
+    window.onload = function(){
+        kernel.require(['../Utilities.js'],
+                       function(){manager(["Connect"]);});
+    }
+  function manager(args) {
+      var steps = {
+          "Connect" : function() {
+              Utilities.connectToTV(function(){
+                  manager(["GetFoundServices"]); },10000);
+          },
+          "GetFoundServices" : function() {
+                  var query = {
+                      selections: [
+                          // Select all services
+                          { field: 0, conditionType: 2, condition: "" }
+                      ],
+                      /* Get channel name, service type,
+                       * is service newly found, TSID, ONID,
+                       * SID, index in UI list
+                       */
+                      fields: [1, 2, 3, 5, 6, 7],
+                      orders: [
+                          { field: 4, direction: 1 }
+                      ]
+                  };
+
+              var serviceTable = de.loewe.sl2.table.found.channels;
+              Utilities.getTableValues(
+                  function(services){
+                      manager(["PrintServices", services]);
+                  },
+                  serviceTable,
+                  query
+              );
+          },
+          "PrintServices" : function(result) {
+              var result= result[0];
+            if (result.length == 0) {
+                Utilities.print("No EPG data retrieved.");
+            }
+            else {
+                result.forEach(function(item) {
+                    Utilities.print(
+                        item.reduce(function(accum, itm){
+                            return accum + '"' + String(itm) + '", '
+                        }, "[ ").slice(0, -2) + " ],"
+                    );
+                });
+            }
+              manager(["EndTest"])
+          },
+          "EndTest" : function() {
+              Utilities.print("Execution is finished.");
+              setTimeout(function() { jbiz.exit(); }, 1500);
+          }
+      }
+      steps[args[0]](args.splice(1, 1));
+
+  }
+</script>
+</head>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+     body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js" type=
+"text/javascript"> </script>
+<script src="../webiz_tests/Libs/kernel.js" type=
+"text/javascript"> </script>
+<script type="text/javascript">
+//TEST SETTINGS
+
+/* This structure of settings allows to determine initial value of settings,
+ should it be checked or not, and new value that should be set for test execution.
+ Each key from this structure can be omitted.
+
+ example: {
+    //value that should be set independly of inital value. Corresponding api
+    //will be called even if initial value is equal to the one that should be set.
+        value: VALUE_TO_SET,
+
+    //initial value that will be checked if is determinated and
+    // not a "DO_NOT_CHECK".
+    //If initial value is different from expected and VALUE_TO_SET is not set,
+    //then INITIAL_VALUE will be set.
+        initialValue: INITIAL_VALUE
+    }
+*/
+
+
+//TV SETTINGS
+
+var testName = "Auto scan";
+/*
+ Array of TV settings that should be set or checked during test execution.
+ No settings will be set and checked if parameter is omitted or empty.
+ List of available settings (each setting can be omitted):
+ - location, see 'Locations' in ./Enumerators.js for all available values
+ - frontend, see 'Source' in ./Enumerators.js for all available values
+ ATTENTION! For auto scan location can NOT be changed!
+*/
+var tvSettings= {
+    location: {
+        initialValue: Location.BELGIUM
+    },
+    frontend: {
+        operatingValue: Source.DVB_S
+    }
+};
+
+//OPERATOR ID
+/*
+ See 'Operator' in ./Enumerators.js for all available values.
+ ATTENTION! Setting operator for auto scan is simulating opening of
+ scan setting wizard. Set operator to DO_NOT_CHANGE or "", or remove this
+ variable to simulate auto scan without opening additional wizard.
+*/
+var operator = Operator.STANDARD;
+
+//SCAN SETTINGS
+/*
+ Array of scan settings that should be set or checked during test execution.
+ No settings will be set and checked if parameter is omitted or empty.
+ Current template contains all available settings. For available values
+ see ./Enumerators.js. Any setting can be omitted if verification and
+ setting of new value is not required for test execution.
+*/
+var scanSettings = {
+    scramblingSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    searchScrambled: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    lcnSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    lcnAccepted: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    searchingMethodSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    searchMethod: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    networkidSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    networkid: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    networkidNoneSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    networkidNone: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    modulationSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    modulation: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    frequencySelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    frequency: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    symbolrateSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    symbolrate: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    hdPreferredSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    hdPreferred: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    // NOTE: Settings below replace the former 'satellite' and
+    // 'availableSatellites' options
+    allScanSatellites: {
+        initialValue: [Satellite.ASTRA1, Satellite.HOT_BIRD]
+    },
+    currentScanSatellite: {
+        initialValue: Satellite.ASTRA1
+    },
+    m7group: {
+        initialValue: NO
+    }
+};
+
+//EXPECTED SCAN RESULT
+
+/*
+ Array containing scan states and required actions.
+ Currectly only manual LCN conflict resolution
+ can be initiated during INITIAL scan for Mediaset.
+ Script will check that not described states were not observed
+ during test execution.
+ LCN CONFLICT
+ 'serviceList' - array of all conflicted services (in any order). Each
+ service should be described in format:
+ [Name, ChNum, ServiceID, StreamID, NetID, Type, Visibility, Selectability]
+ 'executeSwap' -array of required swaps. Swaps should be described in format:
+ {type:1, chanNumbers:[1, 850]} where type - media type of services,
+ chanNumbers - pare of channel numbers that should be swapped.
+ UPDATED SERVICES
+ 'newServices' and 'notfoundServices' have the same structure:
+ 'serviceList' - array of all updated services (in any order). The same
+ format as for lsn conflict.
+ 'removeServices' - list of service index in 'serviceList' array
+ that should be removed.
+
+ You can use corresponding script from ./GetExpectedResult to get correct
+ expected result.
+*/
+var expectedScanResult = {
+    lcnConflict: {},
+    newServices: {
+        serviceList:[
+        ]
+    },
+    unfoundServices: {}
+};
+
+/*
+ Number of TV and Radio services expected to be found during scan.
+ Value will not be checked if parameter is omitted or empty.
+*/
+var numberTvServices = "";
+var numberRadioServices = "";
+
+//TEST INITIALISATION
+
+var idTestProcess="";
+window.onload = function(){
+    kernel.require(
+        '../Libs/Scenarios/AutoScan.js',
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.
+            AutoScan.startTest(tvSettings,
+                               operator,
+					           scanSettings,
+					           numberTvServices,
+					           numberRadioServices,
+					           expectedScanResult)
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            jbiz.writeLine("WARN: '../Libs/Scenarios/AutoScanDVBS.js' is not uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgba(240,255,255,1);    }
+</style>    
+<script src="/var/www/tests/Libs/Enumerators.js"></script>
+<script src="/var/www/tests/Libs/kernel.js"></script>
+<script> 
+var idTestProcess=""; //variable to display log on WeBiz screen 
+
+window.onload = function(){
+    kernel.require(['//var/www/tests/Libs/Utilities.js',
+                    '//var/www/tests/Libs/Timer.js',
+                    '//var/www/tests/Libs/PressButton.js'],
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 600, 600 );
+			webiz.hide();
+            manager(["Connect"])});
+};
+
+function manager(args) {
+
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["ConfirmWakeUp"]); },
+                                  5000);
+        },
+        "ConfirmWakeUp" : function(){
+            Utilities.print("Check wake up state...");
+            var messageid = de.loewe.sl2.messages.messageid;
+            if (messageid.getValue() == Message.CONFIRM_WAKE_UP){
+                Utilities.print("Confirm Wake up by pressing OK RC button...");
+                PressButton.singlePress(Key.OK)
+                setTimeout(function(){manager(["CheckConfirm"]);}, 2000)
+            }
+            else if (messageid.getValue() == Message.NO_MESSAGE) {
+                Utilities.print("No messages are displayed.");
+                Utilities.print("#VERIFICATION PASSED - TV is on.");
+                manager(["EndTest"]);
+            }
+            else {
+                Utilities.print("I don't know that to do, but will press END" 
+                                +" and >>, maybe it will help...");
+                PressButton.singlePress(Key.FAST_FWD)
+                setTimeout(function(){PressButton.singlePress(Key.END)}, 1000)
+                setTimeout(function(){manager(["ConfirmWakeUp"]);}, 2000)
+                }
+        },
+        "CheckConfirm" : function(){
+            Utilities.print("Check wake up message is not displayed...");
+            var messageid = de.loewe.sl2.messages.messageid;
+            if (messageid.getValue() != Message.CONFIRM_WAKE_UP){
+                Utilities.print("#VERIFICATION PASSED - TV is on.");
+                manager(["EndTest"]);
+            }
+            else {
+                Utilities.print("#VERIFICATION FAILED - Confirm Wake up"
+                                + " message is still displayed!");
+                manager(["ConfirmWakeUp"]);
+            }
+        },
+        "EndTest" : function() {
+            Utilities.print("Test finished.");
+            if (typeof(RESULT_FOR_OLD_TP) != "undefined") {
+               jbiz.writeLine("@@@result:TEST_FAILED")
+            }
+            else {
+                jbiz.writeLine("@@@result:TEST_PASSED")
+            }
+            Utilities.endTest()
+        }
+    };
+    
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div id='idState' style="width:100%; text-align:center;">
+        Reboot TV - part2
+    </div>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

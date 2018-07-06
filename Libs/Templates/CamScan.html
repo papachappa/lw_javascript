@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>     
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script>
+	
+//Test settings
+var testName = "CI+ test 1 step 6.1: CI scan";
+
+var startScan = OSDcontrol.IMMEDIATTLY;
+var scanSources = [Source.DVB_C];
+// Cam menu identification filed id, field content
+// short form of messages verification
+//~ var ScanProcess = [
+    //~ [6, "Tuning complete, please wait..."],
+    //~ [8, 9],
+    //~ [2, "bla-bla-bla"]
+//~ ]
+
+var ScanProcess = {
+"messages": [
+				[6,"Tune request 1"],
+				[6,"Tune request 1: success"],
+				[6,"Tune request 2"],
+				[6,"Tune request 2: success"],
+				[6,"Tuning complete, please wait..."]
+			],
+"errorType": ScanError.OPERATOR_PROFILE_NOT_FOUND
+}
+var numberTvServices = 7;
+var numberRadioServices = "";
+
+//EXPECTED RESULT
+
+//TEST STEPS  
+var idTestProcess=""; //variable to display log on WeBiz screen 
+window.onload = function(){
+    kernel.require(
+        './Libs/CamScan.js',
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 600, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.            
+            CamScan.startTest(startScan, 
+                              scanSources, 
+                              ScanProcess, 
+                              numberTvServices, 
+                              numberRadioServices)
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide(); 
+            jbiz.writeLine("WARN: './Libs/CamScan.js' is not uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }                       
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

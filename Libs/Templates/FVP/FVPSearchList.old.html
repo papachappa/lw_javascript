@@ -1,0 +1,200 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../kernel.js"></script>
+<script type="text/javascript">
+
+
+var service_num = 5   // number of expected found suggestions
+var cond = "prog"     // condition in query to find in TV's database
+var expected_array = [
+[
+"0",
+"prog",
+"",
+"",
+"",
+"",
+"V0:MDS_901 Day 1, program 1, ep1",
+"Second title V0:MDS_901 Day 1, program 1, ep1",
+"http://127.0.0.1:3555?http://image.fvcmd.test/images/MDS_901/programs/jpeg/prg_001",
+"http://ait.fvcmd.test/MDS_901/prg_001?nids[]=12290&lloc=search",
+],
+[
+"0",
+"prog",
+"",
+"",
+"",
+"",
+"V0:MDS_901 Day 1, program 2",
+"Second title V0:MDS_901 Day 1, program 2",
+"http://127.0.0.1:3555?http://image.fvcmd.test/images/MDS_901/programs/jpeg/prg_002",
+"http://ait.fvcmd.test/MDS_901/prg_002?nids[]=12290&lloc=search",
+],
+[
+"0",
+"prog",
+"",
+"",
+"",
+"",
+"V0:MDS_901 Day 1, program 3, ep1",
+"Second title V0:MDS_901 Day 1, program 3, ep1",
+"http://127.0.0.1:3555?http://image.fvcmd.test/images/MDS_901/programs/jpeg/prg_003",
+"http://ait.fvcmd.test/MDS_901/prg_003?nids[]=12290&lloc=search",
+],
+[
+"0",
+"prog",
+"",
+"",
+"",
+"",
+"V0:MDS_901 Day 1, program 4",
+"Second title V0:MDS_901 Day 1, program 4",
+"http://127.0.0.1:3555?http://image.fvcmd.test/images/MDS_901/programs/jpeg/prg_004",
+"http://ait.fvcmd.test/MDS_901/prg_004?nids[]=12290&lloc=search",
+],
+[
+"0",
+"prog",
+"",
+"",
+"",
+"",
+"V0:MDS_901 Day 1, program 5",
+"Second title V0:MDS_901 Day 1, program 5",
+"http://127.0.0.1:3555?http://image.fvcmd.test/images/MDS_901/programs/jpeg/prg_005",
+"http://ait.fvcmd.test/MDS_901/prg_005?nids[]=12290&lloc=search",
+],
+]
+
+
+// ------DO NOT CHANGE SCRIPT BELOW THIS LINE--------
+window.onload = function(){
+    kernel.require(['../Utilities.js'], function(){manager(["Connect"])});
+}
+
+var res = []
+var err_count = 0
+
+function manager(args) {
+    var steps = {
+        
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["GetSearchList"]); });
+        },
+
+        "GetSearchList" : function(){
+
+            var fvpSearchListTable = de.loewe.sl2.table.fvp.searchlist;
+            var queryDef  =  
+                {
+                    selections: [ { field: 0, conditionType: 1, condition: "0" }, { field: 1, conditionType: 1, condition: cond }  ],
+                    fields:     [0,1,2,3,4,5,6,7,8,16 ],
+                //    orders:     [ { field: 0, direction: 1 } ]
+                }
+
+            function result() {
+
+              query = fvpSearchListTable.createQuery( queryDef );
+              query.onQueryReady.connect( this, onQueryReady );
+              query.execute();
+
+              function onQueryReady( count )
+              {   
+                  if (count <= 0) {
+                    // Utilities.print("Query with given condition returned empty result, nothing to show")
+                    // manager(["EndTest"]);
+                    manager(["Results"]);
+                  }
+                  query.onQueryReady.disconnect(this, onQueryReady);
+                  query.onRows.connect( this, onRows );
+                  query.readAllRows();
+              }
+
+              function onRows( id, rows )
+              {
+                  res = res.concat(rows)
+                  query.onRows.disconnect(this, onRows);
+                  manager(["Results"]);
+              }
+            }
+  
+            result()
+        },
+
+        "Results": function() {
+
+          function identitycheck(res, expected_array){
+
+
+              for(i=0; i < expected_array.length; i++){
+                for(j=0; j < expected_array[i].length; j++){
+                
+                    if (expected_array[i][j] == "DNC") {
+                    continue
+                    }
+                
+                    else if (expected_array[i][j] != res[i][j]) {
+                    Utilities.print("\nThere is some changed row in result array")
+                    Utilities.print("\"" + res[i][j] + "\"");
+                    
+                    Utilities.print("\nCorresponding to row in expected array")
+                    Utilities.print("\"" + expected_array[i][j] + "\"");
+                    
+                    return false
+                    }
+
+                }
+            }
+            return true
+
+          }
+
+
+          Utilities.print("\nActual searchlist: ")
+          Utilities.print("[");
+                    
+          for ( i = 0; i < res.length; i++ ){
+            Utilities.print("[");
+              for ( j = 0; j < res[i].length; j++ ){ 
+                  if (res[i][j].search(/ERROR/i) == 0) {
+                  err_count += 1
+                  }
+                  Utilities.print("\"" + res[i][j] + "\",");
+              }
+              Utilities.print("],");
+          }
+          Utilities.print("]");
+
+          id_check = identitycheck(res, expected_array)
+          if (err_count != 0) {
+              Utilities.print("\n#VERIFICATION FAILED: "
+                                 + "Current SearchList item contains ERROR string.");
+            }
+            else if (res.length != service_num || id_check == false) {
+              Utilities.print("\n#VERIFICATION FAILED: "
+                                 + "Current SearchList is not equal to expected.");
+            }
+            else {
+             Utilities.print("\n#VERIFICATION PASSED: "
+                                 + "Current SearchList is equal to expected."); 
+            }
+          manager(["EndTest"]);  
+        },
+
+        "EndTest" : function() {
+            Utilities.print("\nExecution finished.");
+            Utilities.printTestResult();
+            setTimeout(function(){ jbiz.exit(); }, 1500);
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>
+

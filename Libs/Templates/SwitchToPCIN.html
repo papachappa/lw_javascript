@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js" type="text/javascript">
+</script>
+<script src="../webiz_tests/Libs/kernel.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+
+var testName = "Postcondition: Switch to the 'PC-IN' video input to "
+    + "prevent DCM";
+var idTestProcess=""; //variable to display log on WeBiz screen
+
+  window.onload = function() {
+      kernel.require(['./Libs/Utilities.js',
+                      './Libs/ChannelChange.js'],
+                     function() {
+                         webiz.move( 100, 100 );
+                         webiz.resize( 600, 600 );
+                         webiz.hide();
+                         Utilities.print(testName);
+                         manager(["Connect"]);
+                     },
+                     function() {
+                         webiz.move( 100, 100 );
+                         webiz.resize( 650, 600 );
+                         webiz.hide();
+                         jbiz.writeLine("WARN: './Libs/ChannelChange.js' or "
+                                        + "'./Libs/Utilities.js' cannot be "
+                                        + "uploaded.");
+                         setTimeout(function(){jbiz.exit()}, 3000)
+                     }
+                    );
+  };
+
+function manager(args) {
+
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(
+                function() {
+                    manager(["ChannelChange"]);
+                },
+                5000);
+        },
+        "ChannelChange" : function() {
+            Utilities.print("Switching channel to PC-IN...");
+            ChannelChange.zapToServiceByName(
+                function() {
+                    Utilities.print(
+                        "Current channel is changed to one having no"
+                            + " broadcast information.");
+                    manager(
+                        ["EndTest"]
+                    );
+                },
+                "PC IN",
+                "4",
+                "#3051",
+                function() {
+                    Utilities.print(
+                        "#ERROR: Channel change was not executed.");
+                    manager(
+                        ["EndTest"]
+                    );
+                }
+            );
+        },
+        "EndTest" : function() {
+            Utilities.print("Test finished.");
+            Utilities.printTestResult();
+            Utilities.endTest();
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

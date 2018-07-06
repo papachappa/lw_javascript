@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../Enumerators.js"></script> 
+<script src="../kernel.js"></script>
+<script>
+<!--DO NOT CHANGE SCRIPT AFTER THIS LINE--!>
+window.onload = function(){
+    kernel.require(['../Utilities.js'],			 
+        function(){manager(["Connect"]);});            
+}              
+function manager(args) {
+	var steps = {
+		"Connect" : function() {
+			Utilities.connectToTV(function(){ manager(["GetNewServices"]); },10000);
+		},
+		"GetNewServices" : function() {
+			var serviceList = de.loewe.sl2.table.servicelist.list;  
+			Utilities.print("Get new services...");
+			var query = {
+				selections: [
+					{ field: 3, conditionType: 1, condition: UpdateType.NEW },
+//					{ field: 21, conditionType: 1, condition: 8},
+				],
+				fields: [0, 6, 8, 9, 10, 21, 24, 25],
+				orders: [ 
+					{ field: 21, direction: 1 }, { field: 21, direction: 1 }
+				]
+			};
+			Utilities.getTableValues(function(services){
+				manager(["PrintNewServices", services]);}, serviceList, query);
+			},
+		"PrintNewServices" : function(services) {
+			Utilities.print("New Services:");
+			for(var key in services[0]){
+			   Utilities.print("[ "
+								+ '"' + services[0][key][0] + '", '
+								+ '"' + services[0][key][1] + '", '
+								+ '"' + services[0][key][2] + '", '
+								+ '"' + services[0][key][3] + '", '
+								+ '"' + services[0][key][4] + '", '
+								+ '"' + services[0][key][5] + '", '
+								+ '"' + services[0][key][6] + '", '
+								+ '"' + services[0][key][7] + '"'
+								+ " ],");
+			};
+			manager(["GetUnfoundServices"])
+		},
+		"GetUnfoundServices" : function() {
+			var serviceList = de.loewe.sl2.table.servicelist.list;  
+			Utilities.print("Get unfound services...");
+			var query = {
+				selections: [
+					{ field: 3, conditionType: 1, condition: UpdateType.UNFOUND },
+ //                   { field: 21, conditionType: 1, condition: 8 },
+				],
+				fields: [0, 6, 8, 9, 10, 21, 24, 25],
+				orders: [ 
+					{ field: 6, direction: 1 },
+				]
+			};
+			Utilities.getTableValues(function(services){
+				manager(["PrintUnfoundServices", services]);}, serviceList, query);
+			},
+		"PrintUnfoundServices" : function(services) {
+			Utilities.print("Unfound Services:");
+			for(var key in services[0]){
+			   Utilities.print("[ "
+								+ '"' + services[0][key][0] + '", '
+								+ '"' + services[0][key][1] + '", '
+								+ '"' + services[0][key][2] + '", '
+								+ '"' + services[0][key][3] + '", '
+								+ '"' + services[0][key][4] + '", '
+								+ '"' + services[0][key][5] + '", '
+								+ '"' + services[0][key][6] + '", '
+								+ '"' + services[0][key][7] + '"'
+								+ " ],");
+			};
+			manager(["EndTest"])
+		},
+		"EndTest" : function() {
+			Utilities.print("Test is finished.");
+		},
+	}    
+	steps[args[0]](args.splice(1, 1));
+}            
+</script>
+</head>
+</html>  
+    
+    

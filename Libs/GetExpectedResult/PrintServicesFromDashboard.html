@@ -1,0 +1,61 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>    
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/> 
+<script src="../kernel.js"></script>
+<script src="../Enumerators.js"></script>
+<script>
+
+//Fields to collect
+var dashboardFields = [1,2,3,5,15,4,14];
+
+<!--DO NOT CHANGE SCRIPT AFTER THIS LINE--!>
+window.onload = function(){
+    kernel.require('../Dashboard.js', 
+        function(){manager(["Connect"])});            
+}
+
+function manager(args) {
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["GetServices"]); });
+        },
+        "GetServices" : function() {
+			Dashboard.getFilteredServicesFromDashboard(
+				function(services){manager(["PrintService",services]);},
+				{},
+				dashboardFields);
+        },
+        "PrintService" : function(income) {
+            if (income[0].length == 0) {
+                Utilities.print("No services are found in dashboard.");
+            }
+            else {
+				var services = Dashboard.refactoring(income[0]);
+				Utilities.print(
+					"Fields: " + dashboardFields.map(
+						function(item) {							
+							return Utilities.getKey(DIR_Fields, item);
+						}
+					)
+				);
+				services.forEach(
+					function(item) {
+						Utilities.print(Utilities.prettyPrint(item));
+					}
+				)
+            }
+           manager(["EndTest"])
+        },
+        "EndTest" : function() {
+            Utilities.print("Execution finished.");
+            setTimeout(function(){jbiz.exit()},1000)
+        },
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>   
+    
+    

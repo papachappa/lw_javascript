@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../Enumerators.js"></script>
+<script src="../kernel.js"></script>
+<script type="text/javascript">
+// block of required parameters
+
+  /* List of services under test
+   * - channelNumber: channel number
+   * - mediaType: media type of required services
+   * - servicesList: name of services list where channel is present
+   * See example:
+   * var services = [
+   *      [1, MediaType.TV, "DVB-S"],
+   *      [8, MediaType.TV, "DVB-S"],
+   *      [3, MediaType.RADIO "DVB-S"],
+   * ];
+ */
+var listName = "Freeview"; //Required List name
+var fields = [SL_Fields.SID, SL_Fields.TSID, SL_Fields.ONID];
+
+var expectedResult = [
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501232400" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501231200" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501230600" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501229400" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501228800" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501227600" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501227000" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501225800" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501225200" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501224000" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501223400" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501222200" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501221600" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501220400" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501219800" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501218600" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501218000" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501216800" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501216200" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501215000" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501214400" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501213200" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501212600" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501211400" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501210800" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501209600" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501209000" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501207800" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501207200" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501206000" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501205400" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501204200" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501203600" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501202400" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501201800" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1501200600" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1501200000" ],
+
+]
+
+window.onload = function(){
+    kernel.require(['../EPGquery.js', '../BEPGquery.js'],
+        function(){manager(["Connect"])});
+}
+
+function manager(args) {
+    
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function() { manager(["GetServices"]); });
+        },
+        "GetServices" : function() {
+            EPGquery.getServicesWithEPG(
+                function(result) { manager(["Results", result]);},
+                listName,
+                fields,
+                function() { manager(["EndTest"]);});
+        },
+        "Results" : function(result) {
+            var result = result[0];
+            
+            if (result.length == 0) {
+                Utilities.print("No services retrieved.");
+                manager(["EndTest"]);    
+            }
+            else {
+                // var services = []
+                // result.forEach(function(item) {
+                    
+                //     services.push(item)
+                // });
+            manager(["MakeQuery", result]);
+            }
+        },
+
+        "MakeQuery" : function(result) {
+          BEPGquery.getBEPG(result, expectedResult, function() { manager(["EndTest"]);});
+        },
+
+        "EndTest" : function() {
+            Utilities.print("\nExecution of test finished!!");
+            Utilities.printTestResult();
+            setTimeout(function(){ jbiz.exit(); }, 1000);
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+
+//TEST SETTINGS
+var testName = "Update dashboard";
+
+/* 
+ATTENTION! Operations will be executed in following order:
+1 - remove requested items,
+2 - add requested services,
+3 - swap dashboard items
+Use CheckDashboard lib for result verification
+*/
+
+/* 
+Array of items index of current dashboard that should be removed.
+Use "all" key to remove all items.
+*/
+var removeDashboardItems = [ 1, 2 ];
+
+/* 
+Current library supports only adding of DVB services.
+Contact with Luxoft test team or Michael Zeitler for lib updated.
+Array of dvb services from overall list those should be added to 
+the dashboard [ "Name", "Type", "SID","TSID","ONID" ].
+Services will be added to the end of current dashboard in the order how 
+they are present in following array
+*/
+var addServices = [
+	[ "Humor", "1", "22003", "22", "1000" ],
+	[ "Q-Music", "2", "609", "22", "1000" ]
+];
+
+/* 
+Swap dashboard items - is not implemented
+*/
+var swapDashboardItems = [ ];
+
+//TEST INITIALISATION
+var idTestProcess="";
+window.onload = function(){ kernel.require(
+	'./Libs/Scenarios/UpdateDashboard.js',
+	function(){
+		webiz.move( 100, 100 );
+		webiz.resize( 650, 600 );
+		webiz.hide();
+		Utilities.print(testName);
+		UpdateDashboard.startTest(removeDashboardItems,
+								  addServices,
+								  swapDashboardItems );
+	},
+	function(){
+		webiz.move( 100, 100 );
+		webiz.resize( 650, 600 );
+		webiz.hide();
+		jbiz.writeLine(
+		 "WARN: './Libs/Scenarios/UpdateDashboard.js' is not uploaded.");
+		setTimeout(function(){jbiz.exit()}, 3000);
+	}
+);
+};
+
+</script>
+</head>
+<body>
+  <div style="float:left; width:100%; text-align:left;">
+    <div id='idTestProcess'></div>
+  </div>
+</body>
+</html>
+-

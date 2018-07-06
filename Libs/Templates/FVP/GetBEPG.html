@@ -1,0 +1,112 @@
+//Example - DB query
+var fvpScheduleListTable = dataModel.de.loewe.sl2.table.fvp.schedulelist;
+var print = jbiz.writeLine;
+var queryDef  =  [
+{
+
+/*  
+   selections (request)
+   ENUM_FVP_SCHEDULE_DAY                   = 0,
+    ENUM_FVP_SCHEDULE_SID                   = 1, // service id
+    ENUM_FVP_SCHEDULE_TSID                  = 2, // transport stream id
+    ENUM_FVP_SCHEDULE_ONID                  = 3, // original network id
+*/
+
+/*
+   fields (response)
+    ENUM_FVP_SCHEDULE_DAY                   = 0,
+    ENUM_FVP_SCHEDULE_SID                   = 1, // service id
+    ENUM_FVP_SCHEDULE_TSID                  = 2, // transport stream id
+    ENUM_FVP_SCHEDULE_ONID                  = 3, // original network id
+    ENUM_FVP_SCHEDULE_TITLE                 = 4, // max. 80 characters
+    ENUM_FVP_SCHEDULE_PROGRAMID             = 5, // used by SL2_TVAPI_STR_FVP_DETAILED_PROGRAMME_INFORMATION_REQ
+    ENUM_FVP_SCHEDULE_PUBLISHED_STARTTIME   = 6  // utc time
+*/
+
+ // queryDef[0]['selections'][1]['condition']
+ // queryDef[0]['selections'][2]['condition']
+ // queryDef[0]['selections'][3]['condition']
+
+
+// queryDef.forEach(function(element, index, array) {
+//     console.log('element ' + element['selections'][1]['condition'] + ' index ' + index);
+//     console.log('element ' + element['selections'][2]['condition'] + ' index ' + index);
+//     console.log('element ' + element['selections'][3]['condition'] + ' index ' + index);
+// });
+
+
+    selections: [ { field: 0, conditionType: 1, condition: "-7" }, { field: 1, conditionType: 1, condition: "1" },{ field: 2, conditionType: 1, condition: "769" },{ field: 3, conditionType: 1, condition: "9018" } ],
+    fields:     [ 0, 1, 2, 3, 4, 5, 6 ]
+//    orders:     [ { field: 0, direction: 1 } ]
+},
+{
+    selections: [ { field: 0, conditionType: 1, condition: "-6" }, { field: 1, conditionType: 1, condition: "1" },{ field: 2, conditionType: 1, condition: "769" },{ field: 3, conditionType: 1, condition: "9018" } ],
+    fields:     [ 0, 1, 2, 3, 4, 5, 6 ]
+//    orders:     [ { field: 0, direction: 1 } ]
+},
+{
+    selections: [ { field: 0, conditionType: 1, condition: "-5" }, { field: 1, conditionType: 1, condition: "1" },{ field: 2, conditionType: 1, condition: "769" },{ field: 3, conditionType: 1, condition: "9018" } ],
+    fields:     [ 0, 1, 2, 3, 4, 5, 6 ]
+//    orders:     [ { field: 0, direction: 1 } ]
+},
+{
+    selections: [ { field: 0, conditionType: 1, condition: "-4" }, { field: 1, conditionType: 1, condition: "1" },{ field: 2, conditionType: 1, condition: "769" },{ field: 3, conditionType: 1, condition: "9018" } ],
+    fields:     [ 0, 1, 2, 3, 4, 5, 6 ]
+//    orders:     [ { field: 0, direction: 1 } ]
+},
+{
+    selections: [ { field: 0, conditionType: 1, condition: "-3" }, { field: 1, conditionType: 1, condition: "1" },{ field: 2, conditionType: 1, condition: "769" },{ field: 3, conditionType: 1, condition: "9018" } ],
+    fields:     [ 0, 1, 2, 3, 4, 5, 6 ]
+//    orders:     [ { field: 0, direction: 1 } ]
+},
+{
+    selections: [ { field: 0, conditionType: 1, condition: "-2" }, { field: 1, conditionType: 1, condition: "1" },{ field: 2, conditionType: 1, condition: "769" },{ field: 3, conditionType: 1, condition: "9018" } ],
+    fields:     [ 0, 1, 2, 3, 4, 5, 6 ]
+//    orders:     [ { field: 0, direction: 1 } ]
+},
+{
+    selections: [ { field: 0, conditionType: 1, condition: "-1" }, { field: 1, conditionType: 1, condition: "1" },{ field: 2, conditionType: 1, condition: "769" },{ field: 3, conditionType: 1, condition: "9018" } ],
+    fields:     [ 0, 1, 2, 3, 4, 5, 6 ]
+//    orders:     [ { field: 0, direction: 1 } ]
+},
+{
+    selections: [ { field: 0, conditionType: 1, condition: "-0" }, { field: 1, conditionType: 1, condition: "1" },{ field: 2, conditionType: 1, condition: "769" },{ field: 3, conditionType: 1, condition: "9018" } ],
+    fields:     [ 0, 1, 2, 3, 4, 5, 6 ]
+//    orders:     [ { field: 0, direction: 1 } ]
+}
+]
+
+for (i=0; i<8; ++i) {
+  run( i );
+}
+//setInterval(run, 2000);
+
+function run( index )
+{
+  query = fvpScheduleListTable.createQuery( queryDef[index] );
+  query.onQueryReady.connect( this, onQueryReady );
+  query.execute();
+}
+
+function onQueryReady( count )
+{
+    query.onRows.connect( this, onRows );
+    query.readAllRows();
+}
+
+function onRows( id, rows )
+{
+    for ( var i = 0; i < rows.length; i++ )
+    {
+        print( "Row " + i + ":" );
+
+        var row = rows[ i ];
+        for ( var j = 0; j < row.length; j++ )
+        {
+            print("  Col " + j + ": " + row[ j ] );
+        }
+    }
+    jbiz.exit();
+}
+
+

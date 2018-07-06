@@ -1,0 +1,132 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../Enumerators.js" type="text/javascript">
+</script>
+<script src="../kernel.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+var idTestProcess=""; //variable to display log on WeBiz screen
+
+window.onload = function(){
+    kernel.require(['../Utilities.js',
+                    '../Timer.js',
+                    '../Messages.js',
+                    '../Structures.js',
+                    '../PressButton.js'],
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 600, 600 );
+            webiz.hide();
+            manager(["Connect"])});
+};
+
+function manager(args) {
+
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["FindWakeUpOSD"]); },
+                                  5000,
+                                  /* Long timeout before start of the script,
+                                   * because after restart WeBiz takes more
+                                   * time to connect all APIs
+                                   */
+                                  3000);
+        },
+        "FindWakeUpOSD" : function() {
+            Utilities.print("Detecting wake up messages...");
+            Messages.closeMessages(
+                function(result){ manager(["ConfirmWakeUp", result]); },
+                [Message.CONFIRM_WAKE_UP, Message.ALARM]
+            );
+        },
+        "ConfirmWakeUp" : function(result) {
+            if (result[0]) {
+                jbiz.writeLine("Wake up message is available."
+                                + "\nConfirming wake up message...");
+                var messageid = de.loewe.sl2.messages.messageid.getValue();
+                switch(messageid){
+                case Message.CONFIRM_WAKE_UP:
+                    var control = OSDcontrol.OK;
+                    break;
+                case Message.ALARM:
+                    var control = OSDcontrol.CLOSE;
+                    break;
+                }
+                Messages.confirmMessage(
+                    function() { manager(["CheckConfirm"]); },
+                    [ messageid,  control],
+                    function() {
+                        Utilities.print("#VERIFICATION FAILED: "
+                                        + "Wake up message was not confirmed."
+                                       );
+                        manager(["EndTest"]);
+                    }
+                );
+            }
+            else {
+                Utilities.print("No wake up message is available."
+                                + "\nTurning off alarm..." );
+                var alarm = {
+                    description: "alarm source",
+                    api: de.loewe.sl2.i32.timerfunctions.alarm.source
+                };
+                Structures.setSmoothCheck(
+                    function() {
+                        Utilities.print("#VERIFICATION PASSED: TV is on.");
+                        manager(["EndTest"]);
+                    },
+                    alarm,
+                    0,
+                    function() {
+                        Utilities.print("#VERIFICATION FAILED: "
+                                        + "Wake up alarm is still active."
+                                       );
+                        manager(["EndTest"]);
+                    }
+                );
+            }
+        },
+        "CheckConfirm" : function(){
+            Utilities.print("Check wake up message availability...");
+            Messages.closeMessages(
+                function() {
+                    Utilities.print("#VERIFICATION FAILED: Confirm Wake up"
+                                    + " message is still displayed!");
+                    manager(["EndTest"]);
+                },
+                [Message.CONFIRM_WAKE_UP, Message.ALARM],
+                function() {
+                    Utilities.print("#VERIFICATION PASSED: TV is on.");
+                    manager(["EndTest"]);
+                }
+            );
+        },
+        "EndTest" : function() {
+			var wakeupReason = de.loewe.sl2.str.system.last.wakeup.reasons;
+			Utilities.print("INFO: The reason for the last 10 wakeups was: "
+									+ wakeupReason.getValue());
+            Utilities.print("Test finished.");
+            Utilities.endTest();
+        }
+    };
+
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div id='idState' style="width:100%; text-align:center;">
+        Reboot TV - part2
+    </div>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

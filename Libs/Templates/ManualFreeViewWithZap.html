@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>WeBiz</title>
+
+    <!-- Bootstrap -->
+	<link rel="stylesheet" 
+		href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" 
+		integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+	<style>
+		table td {padding:0px; vertical-align: top;}
+		.main_tab {width:100%;height:100%; vertical-align: top;}
+		.side div {width:5px;height:730px;background:#f0f0f0;}	
+		#header {position:fixed;top:0;width:100%;height:5px;font-size:1px;background:#f0f0f0}
+		#footer {position:fixed;bottom:0;width:100%;height:5px;font-size:1px;background:#f0f0f0}
+		
+		.leftstr, .rightstr {
+			float: left;
+			width: 50%;
+		   }
+		   
+	   .rightstr {text-align: right;}
+		div.padded {  
+		  padding-right: 5px;  
+		  padding-left: 5px;
+		}
+	</style>
+    
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="../webiz_tests/Libs/kernel.js"></script>
+    <script src="../webiz_tests/Libs/Enumerators.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script type="text/javascript">	
+
+//Header printing		
+		var suiteID = "SI_UK_DTT";	
+		var testID = "SI27_021";
+		var fullName = '<b>Selectable visible TV service (no private data specifier)';
+		
+//stream info
+		var streamName = "SI27";
+		var streamLingth = 20; //in sec
+			
+//Precondition - channel change
+		var servicesList = "Freeview";
+		var channelName = DO_NOT_CHANGE; // DO_NOT_CHANGE
+		var mediaType = MediaType.TV // MediaType.TV, MediaType.RADIO
+		var playback = YES; //Yes, No, DO_NOT_CHECK
+
+//Description of verification
+		var verification = "The service shall appear in any channel listing and Electronic"
+			+ "Programme Guide (EPG) and shall be accessible through the normal"
+			+ "service navigation and by direct numeric key entry.<br />";
+		
+
+//utility variables. DO NOT TOUCH THEM!
+		var STREAM_POSITION={};			
+			
+//TEST STEPS  
+window.onload = function(){
+    kernel.require(
+        ["./Libs/Utilities.js", "./Libs/ChannelChangeByNameCheckPlayback.js"],
+        function(){ 
+                webiz.show();
+                webiz.move( 80, 80 );
+				webiz.resize( 600, 730 );         
+            manager(["StartTest"]);
+        },
+        function(){
+            jbiz.writeLine("WARN: one of libs 'Utilities.js', "
+					+ "`ChannelChangeByNameCheckPlayback` can not be uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }                       
+    );
+};
+
+function manager(args) {
+
+    var steps = {
+        "StartTest" : function() {
+            Utilities.prindHeader(suiteID,testID,"TestName");
+//display streaming process
+            Utilities.streamingProcess(streamName,streamLingth,8,"playback1", "player1");
+			window.setTimeout(function(){manager(["Connect"])},1000)
+        },
+        "Connect": function(){
+			Utilities.print("Start test", "part1");
+				Utilities.connectToTV( function(){
+					manager(["Step1Precondition"]);
+				});
+	
+		},
+        "Step1Precondition" : function() {
+			Utilities.print(fullName, "part1");
+			if (channelName != "DNC"){
+				Utilities.print("Precondition: Channel change to " + channelName + " service...", "part1");
+				var service = [
+					{ 
+						servicesList: servicesList, 
+						channelName: channelName,
+						mediaType: mediaType,
+						playback: playback  
+					}
+				];
+			ChannelChangeByNameCheckPlayback.startTest(service,
+											function(result){manager(["Step1",result])})
+
+			}
+			else {
+				manager(["Step1",true])
+			}
+	
+        },
+        "Step1" : function(zapResult) {
+			if (zapResult[0]){
+				Utilities.print("Precondition is executed or doesn't required", "part1");
+				Utilities.print("INFO: Verification is active during entire stream", "part1");
+				Utilities.manualVerification ( verification, 
+											  "verification1",
+											  "EndTest",
+											  "EndTest",
+											  "EndTest",
+											  "player1",
+											  0,
+											  0);
+			}
+			else{
+				Utilities.print("Channel change was NOT executed correctly", "part1");
+				var blockUIText = verification + " - BLOCKED (precondition is not executed)";
+				var blockLogText = "#VERIFICATION FAILED: " + blockUIText;
+				Utilities.manualResult("warning",
+										blockUIText,
+										"verification1",
+										blockLogText,
+										"EndTest")
+			}
+        },       
+        "EndTest" : function() {
+            Utilities.print("Test is finished.","end");
+            Utilities.printTestResult("end");
+            Utilities.endTest("end")
+        }
+    };
+    steps[args[0]](args.splice(1, args.length-1));
+}
+
+			
+     </script>
+  </head>
+  <body>
+	<div id="header"></div>
+	<table class="main_tab">
+		<tr>
+			<td class="side"><div></div></td>
+			<td>
+			<nav class="navbar navbar-default navbar-static-top">
+				<div id='TestName'></div>
+			</nav>
+			<div class="padded">
+				<div id='playback1'></div>
+				<div id='part1'></div>
+				<div id='verification1'></div>
+				<div id='end'></div>
+			</div>
+			</td>
+			<td class="side"><div></div></td>
+		</tr>
+	</table>
+	<div id="footer"></div>
+  </body>
+</html>

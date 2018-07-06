@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../Libs/Enumerators.js"></script>
+<script src="../Libs/kernel.js"></script>
+<script type="text/javascript">
+
+//TV SETTINGS
+var testName = "Channel change to the service 4 from the stream.";
+
+/* - servicesList: name of services list where channel should be found.
+   - channelNumber: channel number for zapping.
+     if parameter is omitted, channel change will not be executed
+   - mediaType: media type of required services
+     (4- TV, 8-radio) or use enumerator value
+   - playback: playback ability (1 - available, 0 - not available)
+
+   See example:
+ */
+var checkChannels= [
+    {
+        servicesList: "DVB-T",
+        channelName: "VOX",
+        mediaType: MediaType.TV,
+        playback: 0,
+        messageID: 194
+        
+    },
+    {
+        servicesList: "DVB-T",
+        channelName: "ZDF2",
+        mediaType: MediaType.TV,
+        playback: 1,
+        messageID: 0
+    }
+];
+
+//TEST INITIALISATION
+
+var idTestProcess="";
+window.onload = function(){
+    kernel.require('../Libs/Scenarios/ZapCheckPlayback.js',
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+            webiz.hide();
+            Utilities.print(testName);
+            ZapCheckPlayback.startTest(checkChannels)
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+            webiz.hide();
+            jbiz.writeLine("WARN:'../Libs/Scenarios/ZapCheckPlayback.js' is not uploaded.'");
+            setTimeout(function(){jbiz.exit()},3000)
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

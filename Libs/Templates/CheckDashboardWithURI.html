@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+
+//TEST SETTINGS
+var testName = "Check dashboard";
+
+/* 
+Dashboard items can be described in different way depend on item type.
+URI for DVB services can be different for different scans. 
+Each service should be described in format:
+ ["Name", "Type", "Subtype", "URL", "Attributes", "Index", "DVB_triplet", 
+ "Frontend", "Satid", "Frequency", "Modulation", "Symbolrate", "Bandwidth",
+ "Coderate", "Plpid", "Datasliceid", "Inversion", "Polarization", "Band", 
+ "Modcod", "DVBTpriority", "onid","sid","tsid"] 
+For these services URI will be cut upto DVB triplet. Dashboard index
+is not present in directory table (is 0) but for order verification
+this value will be added artificially in libs according to returned 
+items order 
+*/
+var expectedDashboard = [
+[ "131 TVE", "4", "11", "", "8193", "1", "onid=9999&sid=13105&tsid=131", "3", "NA", "346000", "10", "6900", "NA", "NA", "NA", "NA", "1", "NA", "NA", "NA", "NA" ],
+[ "131 E! Entertainment", "4", "11", "", "8193", "2", "onid=9999&sid=15107&tsid=131", "3", "NA", "346000", "10", "6900", "NA", "NA", "NA", "NA", "1", "NA", "NA", "NA", "NA" ],
+[ "131 Kino HD", "4", "11", "", "8193", "3", "onid=9999&sid=13104&tsid=131", "3", "NA", "346000", "10", "6900", "NA", "NA", "NA", "NA", "1", "NA", "NA", "NA", "NA" ],
+[ "ZDF", "4", "11", "/image-cache/", "8193", "4", "onid=1&sid=28006&tsid=1079", "3", "NA", "394000", "10", "6900", "NA", "NA", "NA", "NA", "1", "NA", "NA", "NA", "NA" ],
+[ "3sat", "4", "11", "/image-cache/", "8193", "5", "onid=1&sid=28007&tsid=1079", "3", "NA", "394000", "10", "6900", "NA", "NA", "NA", "NA", "1", "NA", "NA", "NA", "NA" ],
+[ "KiKa", "4", "11", "/image-cache/", "8193", "6", "onid=1&sid=28008&tsid=1079", "3", "NA", "394000", "10", "6900", "NA", "NA", "NA", "NA", "1", "NA", "NA", "NA", "NA" ],
+[ "ZDFinfokanal", "4", "11", "/image-cache/", "8193", "7", "onid=1&sid=28011&tsid=1079", "3", "NA", "394000", "10", "6900", "NA", "NA", "NA", "NA", "1", "NA", "NA", "NA", "NA" ],
+[ "zdf_neo", "4", "11", "/image-cache/", "8193", "8", "onid=1&sid=28014&tsid=1079", "3", "NA", "394000", "10", "6900", "NA", "NA", "NA", "NA", "1", "NA", "NA", "NA", "NA" ],
+[ "Loewe Channel", "32", "63", "http://www.loewe.tv/medianet/sl3xx/dashboard.php?cmd=logo&id=854&device=0", "8193", "9", "http://www.loewe.tv/medianet/sl3xx/dashboard.php?cmd=open&id=854&device=0", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA" ],
+[ "LUMAS", "32", "63", "http://www.loewe.tv/medianet/sl3xx/dashboard.php?cmd=logo&id=4733&device=0", "139265", "10", "http://www.loewe.tv/medianet/sl3xx/dashboard.php?cmd=open&id=4733&device=0", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA" ],
+[ "YouTube", "32", "63", "file:///usr/local/content/dashboard-favorites/thumbnails/youtube.png", "139265", "11", "http://youtube.com/tv", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA" ],
+[ "Berliner Philharmoniker", "32", "63", "file:///usr/local/content/dashboard-favorites/thumbnails/berliner_philharmoniker.png", "139265", "12", "http://tv.digitalconcerthall.com/loewe", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA" ],
+[ "maxdome", "32", "63", "http://www.loewe.tv/medianet/sl3xx/dashboard.php?cmd=logo&id=754&device=0", "8193", "13", "http://www.loewe.tv/medianet/sl3xx/dashboard.php?cmd=open&id=754&device=0", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA" ],
+[ "Deezer", "32", "63", "http://www.loewe.tv/medianet/sl3xx/dashboard.php?cmd=logo&id=82&device=0", "8193", "14", "http://www.loewe.tv/medianet/sl3xx/dashboard.php?cmd=open&id=82&device=0", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA" ],
+[ "Aupeo", "32", "63", "http://www.loewe.tv/medianet/sl3xx/dashboard.php?cmd=logo&id=14&device=0", "8193", "15", "http://www.loewe.tv/medianet/sl3xx/dashboard.php?cmd=open&id=14&device=0", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA" ],
+[ "Test_SFB", "32", "68", "file:///usr/local/content/dashboard-favorites/thumbnails/sfb_test.png", "139265", "16", "sfb://netflix", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA", "NA" ]
+];
+
+/*
+DVB-C - 100
+DVB-C2 - 100 
+DVB-T - 100 
+DVB-T2 - 100 
+DVB-S - 1000 
+DVB-S2 - 1000 
+*/
+var frequencyRange = 100;
+
+/*
+1(%) deviation for C,S,S2. Should be set in percent
+*/
+var symbolrateRange = 1;
+
+//TEST INITIALISATION
+var idTestProcess="";
+window.onload = function(){ kernel.require(
+	'./Libs/Scenarios/CheckDashboardWithURI.js',
+	function(){
+		webiz.move( 100, 100 );
+		webiz.resize( 650, 600 );
+		webiz.hide();
+		Utilities.print(testName);
+		CheckDashboard.startTest(expectedDashboard,
+								 [1,2,3,5,15,14,4],
+								 {},
+								 frequencyRange,
+								 symbolrateRange);
+	},
+	function(){
+		webiz.move( 100, 100 );
+		webiz.resize( 650, 600 );
+		webiz.hide();
+		jbiz.writeLine(
+		 "WARN: './Libs/Scenarios/CheckDashboardWithURI.js' is not uploaded.");
+		setTimeout(function(){jbiz.exit()}, 3000);
+	}
+);
+};
+
+</script>
+</head>
+<body>
+  <div style="float:left; width:100%; text-align:left;">
+    <div id='idTestProcess'></div>
+  </div>
+</body>
+</html>
+-

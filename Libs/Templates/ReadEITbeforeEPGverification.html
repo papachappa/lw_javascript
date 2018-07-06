@@ -1,0 +1,295 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+     body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>    
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+//Test settings
+var testName = "Read EIT before verification of EPG";
+// Service list
+var serviceList = "UPC";
+//Homing channel (from actual TS)
+var homingChannel = ["535", MediaType.TV, "UPC"];
+// Filter to collect TV or Radio services
+//var ServiceType = MediaType.TV;
+//var ServiceType = MediaType.RADIO;
+var ServiceType = "all";
+
+//TEST STEPS
+var idTestProcess=""; //variable to display log on WeBiz screen
+window.onload = function(){
+	kernel.require(
+		['./Libs/ChannelChange.js','./Libs/ServiceList.js'],
+		function(){
+			webiz.move( 100, 100 );
+			webiz.resize( 650, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+			manager(["Connect"]);
+		},
+		function(){
+			webiz.move( 100, 100 );
+			webiz.resize( 650, 600 );
+			webiz.hide(); 
+			jbiz.writeLine("WARN: './Libs/ChannelChange.js' or "
+							+ "'./Libs/ServiceList.js' can not be uploaded.");
+			setTimeout(function(){jbiz.exit()},3000)
+		}
+	);
+};
+
+function manager(args) {
+	var steps = {
+		"Connect" : function() {
+			Utilities.print(" ");
+			Utilities.print("Test description:");
+			Utilities.print("1. Connect PC to TV.");
+			Utilities.print("2. Switch to homing channel.");
+			Utilities.print("3. Read EIT for all services");
+			Utilities.print(" ");
+			Utilities.print("Test execution:");
+			Utilities.connectToTV(function(){
+							manager(["ClearEPGdatabase"]);
+							});
+		},
+		"ClearEPGdatabase" : function() {
+			Utilities.print("Clear previous EPG database");
+			de.loewe.sl2.action.servicemode.epg.clear.database.call();
+			setTimeout(function(){
+							manager(["SwitchToHomingChannel"]);
+						},3000);
+		},
+		"SwitchToHomingChannel" : function() {
+			Utilities.print("Switching to homing channel...");
+			ChannelChange.zapWithVerification(
+				function() {
+					Utilities.print("Switch to homing channel is successful.");
+					manager(["GetListUID"]);
+				},
+				homingChannel[0],
+				homingChannel[1],
+				homingChannel[2],
+				function() {
+					Utilities.print("#VERIFICATION FAILED: Switch to homing "
+									+ "channel was not performed");
+					manager(["ReturnResults", false]);
+				}
+			);
+		},
+		"GetListUID" : function() {
+			ServiceList.getServicelistUID(function(listUID){
+				manager(["CheckList", listUID]);
+			}, serviceList);
+		},
+		"CheckList" : function(UIDs) {
+			var UIDs = UIDs[0];
+			var UID = UIDs[0];
+			if (UIDs.length != 1) {
+				Utilities.print("#ERROR: " + UIDs.length + " service lists '"
+								+ serviceList 
+								+ "' are found.\nTest is terminated");
+				manager(["ReturnResults", false]);
+			}
+			else {
+				setTimeout(function(){
+								manager(["GetResults", UID]);
+							},20000);
+			}
+		},
+		"GetResults" : function(listUID) {
+			var serviceListTable = de.loewe.sl2.table.servicelist.list;
+			var selections = [
+					{field:1, conditionType:1, condition: listUID[0]}
+				];
+			if (ServiceType != "all") {
+				selections.push(
+					{field: 21, conditionType:1, condition: ServiceType}
+				);
+			}
+			var updateCounter = 4;
+			var orders = [];
+			var queryDef = {
+				selections:  selections,
+				fields: [0,6,8,9,10,13,18,21],
+				orders: orders
+			};
+			var result = [];
+			var emptyEIT = [];
+			var rowsNumber = 0;
+			var currentPhase = 0;
+			var currentIndex = 0;
+			query = serviceListTable.createQuery(queryDef);
+			query.onQueryReady.connect(this,onQueryReady);
+			query.execute();
+			function rowSeeker(index) {
+				query.seekToRow(index, 0);
+				query.readNextRows(1);
+			}
+
+			function onQueryReady(count){
+				Utilities.print("Please wait...");
+				query.onQueryReady.disconnect(this, onQueryReady);
+		        if (count == 0) {
+					manager(["ReturnResults"]);
+				}
+				else {
+					query.onRows.connect(this, onRows);
+					query.seekToRow(0, 0);
+					if (count > 10) {
+						query.readNextRows(10);
+					}
+					else {
+						query.readNextRows(count);
+					}
+					rowsNumber = count;
+				}
+			}
+			function onRows(id, rows){
+				if (currentPhase == 0) {
+					currentPhase++;
+					query.seekToRow(0, 0);
+					if (rowsNumber > 10) {
+						query.readNextRows(10);
+					}
+					else {
+						query.readNextRows(rowsNumber);
+					}
+				}
+				else if (currentPhase == 1) {
+					result = result.concat(rows);
+					if (rowsNumber > 10) {
+						currentPhase++;
+						currentIndex++;
+						query.seekToRow((10*currentIndex), 0);
+						query.readNextRows(10);
+					}
+					else {
+						currentPhase = 3;
+						query.seekToRow(0, 0);
+						query.readNextRows(1);
+					}
+				}
+				else if (currentPhase == 2) {
+					rowsNumber = rowsNumber - 10;
+					currentPhase--;
+					if (rowsNumber > 10) {
+						query.seekToRow((10*currentIndex), 0);
+						query.readNextRows(10);
+					}
+					else {
+						query.seekToRow((10*currentIndex), 0);
+						query.readNextRows(rowsNumber);
+					}
+				}
+				else if (currentPhase == 3) {
+					result.forEach(function(item, i) {
+						if (item[5] == "" || item[6] == "") {
+							emptyEIT = emptyEIT.concat(i);
+						}
+					});
+					if (emptyEIT.length == 0 || updateCounter == 0) {
+						currentPhase = 6;
+						query.seekToRow(0, 0);
+						query.readNextRows(1);
+					}
+					else {
+						currentPhase++;
+						currentIndex = 0;
+						setTimeout(function(){
+							query.seekToRow(emptyEIT[currentIndex], 0);
+							query.readNextRows(1);
+							}, 5000);
+					}
+				}
+				else if (currentPhase == 4) {
+					if (currentIndex == emptyEIT.length) {
+						updateCounter--;
+						currentPhase = 3;
+						emptyEIT = [];
+						query.seekToRow(0, 0);
+						query.readNextRows(1);
+					}
+					else {
+						if (rows[0][5] != "") {
+							result[emptyEIT[currentIndex]][5] = rows[0][5];
+						}
+						if (rows[0][6] != "") {
+							result[emptyEIT[currentIndex]][6] = rows[0][6];
+						}
+						if (rows[0][5] == "" || rows[0][6] == "") {
+							currentPhase++;
+							query.seekToRow(emptyEIT[currentIndex], 0);
+							query.readNextRows(1);
+						}
+						else {
+							currentIndex++;
+							if (currentIndex == emptyEIT.length) {
+								query.seekToRow(0, 0);
+								query.readNextRows(1)
+							}
+							else {
+								query.seekToRow(emptyEIT[currentIndex], 0);
+								query.readNextRows(1);
+							}
+						}
+					}
+				}
+				else if (currentPhase == 5) {
+					currentPhase--;
+					if (rows[0][5] != "") {
+						result[emptyEIT[currentIndex]][5] = rows[0][5];
+					}
+					if (rows[0][6] != "") {
+						result[emptyEIT[currentIndex]][6] = rows[0][6];
+					}
+					currentIndex++;
+					if (currentIndex == emptyEIT.length) {
+						query.seekToRow(0, 0);
+						query.readNextRows(1)
+					}
+					else {
+						query.seekToRow(emptyEIT[currentIndex], 0);
+						query.readNextRows(1);
+					}
+				}
+				else if (currentPhase == 6) {
+					query.onRows.disconnect(this, onRows);
+					manager(["ReturnResults", result]);
+				}
+			}
+		},
+		"ReturnResults": function(result){
+			if (result[0] == false) {
+				Utilities.print("#ERROR: Results were not collected.");
+				Utilities.printTestResult();
+				Utilities.endTest();
+			}
+			else { 
+				if (result.length == 0) {
+					Utilities.print("WARN: Results are empty.");
+				}
+				else {
+					Utilities.print("#VERIFICATION PASSED: Results were "
+									+ "collected.");
+				}
+				Utilities.printTestResult();
+				Utilities.endTest();
+			}
+		}
+	}
+	steps[args[0]](args.slice(1));
+}
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

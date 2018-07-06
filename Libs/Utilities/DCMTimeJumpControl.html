@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>    
+<script src="../Enumerators.js"></script>     
+<script src="../kernel.js"></script>
+<script type="text/javascript"> 
+	
+//TEST SETTINGS
+var sleepDuration = 900 //in sec
+
+<!--DO NOT CHANGE SCRIPT AFTER THIS LINE--!> 
+var idTestProcess=""; //variable to display log on WeBiz screen 
+
+window.onload = function(){
+    kernel.require(['../Utilities.js',
+                    '../Timer.js'],
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 600, 600 );
+			webiz.hide();
+            manager(["Connect"])});
+};
+
+function manager(args) {
+
+    var steps = {
+		"Connect" : function(){
+            Utilities.connectToAPIs(
+                function(){manager(["CheckCurrentAlarm"]); },
+				   ["de.loewe.sl2.i64.datetime.time.utc",
+					"de.loewe.sl2.i64.datetime.deviation.next.change.utc",
+					"de.loewe.sl2.i32.datetime.deviation.fromutc",
+					"de.loewe.sl2.i32.datetime.deviation.next",
+					"de.loewe.sl2.i32.timerfunctions.alarm.once",
+					"de.loewe.sl2.i32.timerfunctions.alarm.source",
+					"de.loewe.sl2.i32.timerfunctions.alarm.device",
+					"de.loewe.sl2.vstr.servicemode.option.names",
+					"de.loewe.sl2.vstr.servicemode.option.values"], "0");
+		  },
+		"CheckCurrentAlarm" : function(){
+			//var alarmOnce = de.loewe.sl2.i32.timerfunctions.alarm.once;
+			//var curWakeUpTime = alarmOnce.getValue();
+			var curWakeUpTime = de.loewe.sl2.i32.timerfunctions.alarm.once.getValue();
+			var curMin = (curWakeUpTime%3600-((curWakeUpTime%3600)%60))/60;
+			if (curMin < 10){
+				curMin = "0".concat(curMin)
+							}
+			var curHours = (curWakeUpTime - curWakeUpTime%3600)/3600;
+			Utilities.print("INFO: Current TV wake up time is "+ curHours + ":" + curMin  + "");
+			var newAlarm = Timer.calculateFutureTvTime(sleepDuration);
+			var currentAlarm = de.loewe.sl2.i32.timerfunctions.alarm.once.getValue();
+			var deltaTime = (newAlarm - currentAlarm);
+			if (deltaTime < -600 || deltaTime > 1200) {
+				Utilities.print ('#VERIFICATION FAILED: it looks like time jumping was happened');
+				Utilities.print('INFO: New alarm will be set');
+				Utilities.print('TEST_FAILED');
+				Timer.setAlarmOnceTimer(function(){ manager(["EndTest"]); },
+										function(){ manager(["EndTest"]); },
+										MediaType.TV,
+										sleepDuration);
+			}
+			else {
+				manager(["EndTest"])
+			}
+		},
+        "EndTest" : function() {
+            Utilities.print("DCM time control finished");
+	    Utilities.printTestResult()
+            setTimeout(function(){jbiz.exit()},500)
+            }
+    };
+    
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div id='idState' style="width:100%; text-align:center;">
+        Reboot TV - part1
+    </div>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 
+

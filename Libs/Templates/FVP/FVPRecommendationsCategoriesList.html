@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../kernel.js"></script>
+<script type="text/javascript">
+
+
+var service_num = 3   // number of expected found suggestions
+var expected_array = [
+  [ "V2: All", "V2: The best of all recommended content on Freeview Play", "crid://digital.co.uk/recommendations/categories/all", ],
+  [ "V2: Comedy", "V2: Hilarious and funny programmes guaranteed to make you laugh and giggle.", "crid://digital.co.uk/recommendations/categories/comedy", ],
+  [ "V2: Soap", "V2: The most poplur and last long soap TV programs within UK.", "crid://digital.co.uk/recommendations/categories/soap", ]
+]
+
+
+
+// ------DO NOT CHANGE SCRIPT BELOW THIS LINE--------
+window.onload = function(){
+    kernel.require(['../Utilities.js', '../FVP.js'], function(){manager(["Connect"])});
+}
+
+function manager(args) {
+
+    var steps = {
+        
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["APIRequest"]); });
+        },
+
+        "APIRequest" : function(){
+          var fvp_recomm_cat_list = de.loewe.sl2.table.fvp.recommendationscategorieslist;
+          var queryDef  =  
+              {
+              //    selections: [ { field: 0, conditionType: 1, condition: "xyz" } ],
+                  fields:     [ 0, 1, 2 ],
+              //    orders:     [ { field: 0, direction: 1 } ]
+              }
+          FVP.GetRequest(expected_array, fvp_recomm_cat_list, queryDef, function() { manager(["EndTest"]);}, service_num);
+        },
+
+        "EndTest" : function() {
+            Utilities.print("\nExecution finished.");
+            setTimeout(function(){ jbiz.exit(); }, 1500);
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>
+

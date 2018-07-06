@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../kernel.js"></script>
+<script type="text/javascript">
+
+
+var service_num = 5   // number of expected found suggestions
+var cond = "prog"     // condition in query to find in TV's database
+
+var expected_array = [
+[
+"V0:MDS_901 Day 1, program 1, ep1",
+],
+[
+"V0:MDS_901 Day 1, program 2",
+],
+[
+"V0:MDS_901 Day 1, program 3, ep1",
+],
+[
+"V0:MDS_901 Day 1, program 4",
+],
+[
+"V0:MDS_901 Day 1, program 5",
+],
+]
+
+
+// ------DO NOT CHANGE SCRIPT BELOW THIS LINE--------
+window.onload = function(){
+    kernel.require(['../Utilities.js', '../FVP.js'], function(){manager(["Connect"])});
+}
+
+function manager(args) {
+
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["APIRequest"]); });
+        },
+
+        "APIRequest" : function(){
+            var suggestion_req = de.loewe.sl2.str.fvp.search.suggestions.req;
+            var suggestion_res = de.loewe.sl2.vstr.fvp.search.suggestionslist;
+
+            FVP.GetRequest(expected_array, suggestion_req, suggestion_res, function() { manager(["EndTest"]);}, service_num, "set_get");
+            
+        },
+        "EndTest" : function() {
+            Utilities.print("\nExecution finished.");
+            setTimeout(function(){ jbiz.exit(); }, 1500);
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>

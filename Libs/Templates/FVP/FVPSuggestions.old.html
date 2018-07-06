@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../kernel.js"></script>
+<script type="text/javascript">
+
+
+var service_num = 5   // number of expected found suggestions
+var cond = "prog"     // condition in query to find in TV's database
+
+var expected_array = [
+["V0:MDS_901 Day 1, program 1, ep1"],
+["V0:MDS_901 Day 1, program 2"],
+["V0:MDS_901 Day 1, program 3, ep1"],
+["V0:MDS_901 Day 1, program 4"],
+["V0:MDS_901 Day 1, program 5"]
+] 
+
+// ------DO NOT CHANGE SCRIPT BELOW THIS LINE--------
+window.onload = function(){
+    kernel.require(['../Utilities.js'], function(){manager(["Connect"])});
+}
+
+var err_count = 0
+
+function manager(args) {
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["GetSuggestions"]); });
+        },
+
+        "GetSuggestions" : function(){
+           function wait(ms){
+              var start = new Date().getTime();
+              var end = start;
+              while(end < start + ms) {
+                end = new Date().getTime();
+             }
+           }
+
+            var suggestion_req = de.loewe.sl2.str.fvp.search.suggestions.req;
+            var suggestion_res = de.loewe.sl2.vstr.fvp.search.suggestionslist;
+            var res_array = new Array(10);
+            suggestion_req.setValue(cond);
+
+            function result() {
+              res_array = suggestion_res.getValue();
+
+              Utilities.print("\nActual suggestionlist: ")
+              Utilities.print("[");
+                    
+              for ( i = 0; i < res_array.length; i++ ){
+                Utilities.print("[");
+                      if (res_array[i].search(/ERROR/i) == 0) {
+                      err_count += 1
+                      }
+                      Utilities.print("\"" + res_array[i] + "\",");
+                  
+                  Utilities.print("],");
+              }
+              Utilities.print("]");
+            return res_array
+            }
+            
+            wait(2000)
+            
+            res_array = result()
+            
+            function identitycheck(res_array, expected_array){
+
+
+              for(i=0; i < expected_array.length; i++){
+                    if (expected_array[i] == "DNC") {
+                    continue
+                    }
+                
+                    else if (expected_array[i] != res_array[i]) {
+                    Utilities.print("\nThere is some changed row in result array")
+                    Utilities.print("\"" + res_array[i] + "\"");
+                    
+                    Utilities.print("\nCorresponding to row in expected array")
+                    Utilities.print("\"" + expected_array[i] + "\"");
+                    
+                    return false
+                    }
+
+              }
+            return true
+
+            }
+
+            id_check = identitycheck(res_array, expected_array) 
+            if (err_count != 0) {
+              Utilities.print("\n#VERIFICATION FAILED: "
+                                 + "Current SuggestionList item contains ERROR string.");
+            }
+            else if (res_array.length != service_num || id_check == false) {
+              Utilities.print("\n#VERIFICATION FAILED: "
+                                 + "Current SuggestionList is not equal to expected.");
+            }
+            else {
+             Utilities.print("\n#VERIFICATION PASSED: "
+                                 + "Current SuggestionList is equal to expected."); 
+            }
+            manager(["EndTest"]);
+      
+        },
+        "EndTest" : function() {
+            Utilities.print("\nExecution finished.");
+            Utilities.printTestResult();
+            setTimeout(function(){ jbiz.exit(); }, 1500);
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>
+

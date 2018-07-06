@@ -1,0 +1,92 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../../Libs/kernel.js"></script>
+<script src="../../Libs/Enumerators.js"></script>
+<script type="text/javascript">
+	
+//Set correct number of returned details 
+var service_num = 4
+
+var expected_array = [
+	["Second title V0:MDS_912 Day 1, program 2"],
+	["Metadata: medium: MDS:Description for V0:MDS_912 Day 1, program 2"],
+	["http://127.0.0.1:3555?http://image.fvcmd.test/images/MDS_912/programs/jpeg/prg_002"],
+	["urn:dtg:metadata:cs:DTGContentWarningCS:2011:W ..Watershed, like these sweet mornings of spring which I enjoy with my whole heart. I am alone, and feel the chaa"]
+]
+
+// ------DO NOT CHANGE SCRIPT BELOW THIS LINE--------
+window.onload = function(){
+    kernel.require(['../../Libs/Utilities.js', '../../Libs/FVP.js', '../../Libs/PressButton.js'], function(){manager(["Connect"])});
+}
+
+function manager(args) {
+    
+    var steps = {
+        
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["OpenBEPGMenu"]); });
+        },
+        
+        "OpenBEPGMenu" : function() {
+			var epgRequsted = de.loewe.sl2.i32.epg.schedule.requested;          
+			// Get to EPG
+			Utilities.print("Need to get BEPG via UI in order to get result from BEPG")
+			PressButton.pressWithWait(Key.END, 2000);
+			PressButton.pressWithWait(Key.END, 2000);
+			PressButton.pressWithWait(Key.EPG, 2000);
+			if (epgRequsted.getValue() == 1) {
+				PressButton.pressWithWait(Key.CONTEXT_MENU, 2000);
+				PressButton.pressWithWait(Key.UP, 2000);
+				PressButton.pressWithWait(Key.UP, 2000);
+				PressButton.pressWithWait(Key.UP, 2000);
+				PressButton.pressWithWait(Key.UP, 2000);
+				PressButton.pressWithWait(Key.OK, 7000);
+				PressButton.pressWithWait(Key.END, 2000);
+				PressButton.pressWithWait(Key.END, 2000);
+				manager(["GetActualArray"]);
+			}
+			else {
+				PressButton.pressWithWait(Key.END, 2000);
+				PressButton.pressWithWait(Key.END, 2000);
+				Utilities.print("#VERIFICATION FAILED: back to EPG menu was not performed.");
+				manager(["EndTest"]);
+			}
+        },
+
+        "GetActualArray" : function(){
+          var main_title_api = de.loewe.sl2.str.fvp.detailedprogrammeinformation
+          var service_num = 0
+          var queryDef  =  undefined
+
+		//Set fields that needed to verify
+          var secondary_title_api = main_title_api.secondarytitle;
+          var mediumsynopsis_api = main_title_api.mediumsynopsis;
+          var image_url_api = main_title_api.imageurl;
+          var parental_text_api = main_title_api.parentaltext;
+          
+		//Do NOT forgot to update array below
+          var api_array = [secondary_title_api, mediumsynopsis_api, image_url_api, parental_text_api]
+          var result_array = []
+
+          FVP.GetRequest(expected_array, api_array, queryDef, function(result_array) {manager(["CompareArrays", result_array])}, service_num, "set_get");
+        },        
+
+        "CompareArrays" : function(result_array) {
+            var result_array = String(result_array[0])
+            result_array = result_array.split("$,");
+            FVP.GetRequest(expected_array, [], [], function() {manager(["EndTest"])}, service_num, "compare", result_array);
+        },
+
+        "EndTest" : function() {
+            Utilities.print("\nExecution finished.");
+            setTimeout(function(){ jbiz.exit(); }, 1500);
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>
+

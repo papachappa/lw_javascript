@@ -1,0 +1,93 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+
+//TV SETTINGS
+var testName = "Verification of parental lock";
+
+/* - serviceList: name of services list where channel should be found.
+   - channelNumber: channel number for zapping.
+     if parameter is omitted, channel change will not be executed
+   - mediaType: media type of required services
+     (4- TV, 8-radio) or use enumerator value
+   - isLocked: lock state (1 - locked, 0 - available)
+
+   See example:
+ */
+var channelList = [
+    // Verification that the current channel is locked (without channel change)
+    {
+        serviceList: "FreeView",
+        channelNumber: "",
+        mediaType: "",
+        isLocked: 0,
+    },
+    // Analog of the one above
+    {
+        isLocked: 0,
+    },
+    // Verification that the TV service with channel number 5 from the
+    // "FreeView" service list is available
+    {
+        serviceList: "FreeView",
+        channelNumber: 5,
+        mediaType: MediaType.TV,
+        isLocked: 0,
+    },
+    // Verification that the TV service with channel number 1 from the
+    // "FreeView" service list is locked
+    {
+        serviceList: "FreeView",
+        channelNumber: 2,
+        mediaType: MediaType.TV,
+        isLocked: 1,
+    },
+    // Verification that the radio service with channel number 3 from
+    // the "FreeView" service list is available
+    {
+        serviceList: "FreeView",
+        channelNumber: 3,
+        mediaType: MediaType.Radio,
+        isLocked: 0,
+    }
+];
+
+//TEST INITIALISATION
+
+var idTestProcess="";
+window.onload = function(){
+    kernel.require('./Libs/CheckLockedChannels.js',
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+            CheckLockedChannels.startTest(channelList)
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            jbiz.writeLine("WARN: './Libs/CheckLockedChannels.js' "
+                           + "is not uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

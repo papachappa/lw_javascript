@@ -1,0 +1,81 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+     body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>    
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script>
+//Test settings
+var testName = "Telenet test 03 step 1.2: Check empty list is not created";
+
+//EXPECTED RESULT
+
+var listName = "Telenet";
+
+<!--DO NOT CHANGE SCRIPT AFTER THIS LINE--!>   
+var idTestProcess=""; //variable to display log on WeBiz screen 
+window.onload = function(){
+    kernel.require(['./Libs/ServiceList.js','./Libs/Utilities.js'],
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600);
+			webiz.hide();
+            manager(["Connect"])});
+};
+
+function manager(args) {
+
+    var steps = {
+        "Connect" : function() {
+            Utilities.print(testName);
+            Utilities.print(" ");
+            Utilities.print("Test description:");
+            Utilities.print("1. Connect PC to TV.");
+            Utilities.print("2. Get service list UID by list name.");
+            Utilities.print("3. Check that list is not exist.");
+            Utilities.print(" ");
+            Utilities.print("Test execution:");
+            Utilities.connectToTV( function(){
+                manager(["GetListUID"]);
+            });
+        },
+        "GetListUID" : function() {
+            ServiceList.getServicelistUID( function(listUID){
+                    manager(["CheckList", listUID]);
+                }, listName);
+        },
+        "CheckList" : function(UID) {
+            if (Utilities.numberOfElements(UID[0]) == 0) {
+                Utilities.print("#VERIFICATION PASSED - servicelists '"
+                                + listName
+                                + "' is not exist.");
+                manager(["EndTest"]);
+            }
+            else{
+                Utilities.print("#VERIFICATION FAILED - servicelists '"
+                                + listName
+                                + "' is exist.");
+                manager(["EndTest"]);
+            }
+        },
+        "EndTest" : function() {
+            Utilities.print("Test finished.");
+            Utilities.printTestResult();
+            Utilities.endTest();
+        }
+    };
+    
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

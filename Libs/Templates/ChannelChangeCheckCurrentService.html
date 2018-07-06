@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>     
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script>
+ 
+//TV SETTINGS 
+var testName = "Channel change with checking of current service";
+var channel = {
+	servicesList: "Freeview", 
+	channelName: "SIT 1",
+	mediaType: MediaType.TV
+};
+/* 
+If all parameters of DVB triplet are skiped, then service won't be checked,
+playback verification will be done as the only test step.
+Any part of DVB triplet can be set as DO_NOT_CHECK/"DNC" and will be skipped
+from verification 
+*/
+var serviceID = DO_NOT_CHECK;
+var streamID = DO_NOT_CHECK;
+var networkID = DO_NOT_CHECK;
+/* YES/1 - playback is available
+NO/0 - playback is not available
+DO_NOT_CHECK/"DNC" - verification will be skipped
+*/
+var playback = 1;
+
+/*
+list of available streaming parameters:
+	"frontend",
+	"satid",
+	"frequency",
+	"modulation",
+	"symbolrate",
+	"bandwidth",
+	"coderate",
+	"plpid",
+	"datasliceid",
+	"inversion",
+	"polarization",
+	"band",
+	"modcod",
+	"dvbtpriority",
+	"onid",
+	"sid",
+	"tsid"
+*/
+
+var streamingParameters = { };
+
+// in KHz
+var frequencyRange = 100;
+// in %
+var symbolrateRange = 1;
+
+var content = {
+	subtitle: {
+		exist: YES,
+		index: -1,
+		table: [
+					["-1", "#3005", "#3005", "0", "0", "0"],
+					["0","", "#3007", "0", "0", "0"]
+				],
+		languageFavoured: DO_NOT_CHECK,
+		languageAlternative: DO_NOT_CHECK,
+	},
+	audio:{
+		exist: YES,
+		index: -1,
+		table: [
+					["0","", "#3007", "0", "0", "0"]
+				],
+		languageFavoured: DO_NOT_CHECK,
+		languageAlternative: DO_NOT_CHECK
+	}
+};
+ 
+  
+//TEST STEPS  
+var idTestProcess=""; //variable to display log on WeBiz screen 
+window.onload = function(){
+    kernel.require(
+        ['./Libs/Utilities.js', './Libs/ChannelChange.js', './Libs/Scenarios/CheckCurrentService.js', ],
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.            
+            manager(["Connect"]);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide(); 
+            jbiz.writeLine("WARN: 'One of libs can not be uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }                       
+    );
+};
+
+function manager(args) {
+
+    var steps = {
+        "Connect" : function() {
+            Utilities.print(testName);
+            Utilities.print(" ");
+            Utilities.print("Test description:");
+            Utilities.print("1. Connect PC to TV.");
+            Utilities.print("2. Channel chnage by name");
+            Utilities.print("3. Check current services");
+            Utilities.print(" ");
+            Utilities.print("Test execution:");
+            Utilities.connectToTV(function(){ manager(["ChannelChange"]); });
+        },
+        "ChannelChange" : function() {
+			ChannelChange.zapToServiceByName(
+				function(){
+					manager(["CheckCurrentService"])
+				},
+				channel.channelName,
+				channel.mediaType,
+				channel.servicesList,
+				function(){
+					Utilities.print("Verification of current service will be" 
+						+ "skipped, because channel change is not executed correctly");
+					manager(["EndTest"])
+				}
+			)
+        },
+        "CheckCurrentService" : function() {
+			CheckCurrentService.startTest(serviceID,
+										  streamID,
+										  networkID,
+										  playback,
+										  streamingParameters,
+										  frequencyRange,
+										  symbolrateRange,
+										  content,
+										  function(){manager(["EndTest"])});
+
+        },
+        "EndTest" : function() {
+            Utilities.print("Test finished.");
+            Utilities.printTestResult();
+            Utilities.endTest()
+        }
+    };
+    
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,102 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../Enumerators.js"></script>
+<script src="../kernel.js"></script>
+<script type="text/javascript">
+// block of required parameters
+
+  /* List of services under test
+   * - channelNumber: channel number
+   * - mediaType: media type of required services
+   * - servicesList: name of services list where channel is present
+   * See example:
+   * var services = [
+   *      [1, MediaType.TV, "DVB-S"],
+   *      [8, MediaType.TV, "DVB-S"],
+   *      [3, MediaType.RADIO "DVB-S"],
+   * ];
+ */
+	var services = [
+	[ "1", MediaType.TV, "Unitymedia"],
+	[ "2", MediaType.TV, "Unitymedia"],
+	[ "3", MediaType.TV, "Unitymedia"],
+	[ "4", MediaType.TV, "Unitymedia"],
+	[ "51", MediaType.TV, "Unitymedia"],
+	[ "52", MediaType.TV, "Unitymedia"],
+	[ "55", MediaType.RADIO, "Unitymedia"],
+	[ "56", MediaType.RADIO, "Unitymedia"],
+	[ "58", MediaType.TV, "Unitymedia"],
+	[ "9999", MediaType.TV, "Unitymedia"],
+	[ "10000", MediaType.TV, "Unitymedia"],
+
+];
+var filters = {};
+var optionalFields = [EPG.START_TIME, EPG.END_TIME, EPG.TITLE, EPG.SHORT_TEXT, 
+					  EPG.DESCRIPTION, EPG.RATING, EPG.THEMES];
+
+// ------DO NOT CHANGE SCRIPT BELOW THIS LINE--------
+window.onload = function(){
+    kernel.require('../EPGquery.js',
+        function(){manager(["Connect"])});
+}
+
+function manager(args) {
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["GetEPG"]); });
+        },
+        "GetEPG" : function() {
+            var fields = [EPG.SID, EPG.TSID, EPG.ONID, EPG.EID].concat(
+                optionalFields);
+            EPGquery.getEPG(
+                function(result) { manager(["PrintResults", result]);},
+                services,
+                filters,
+                fields,
+                function() { manager(["EndTest"]);});
+        },
+        "PrintResults" : function(result) {
+            var result = result[0];
+            if (result.length == 0) {
+                Utilities.print("No EPG data retrieved.");
+            }
+            else {
+				// Cut generated part of Event ID
+				var eventID;
+				var lengthToCut;
+				function cutEventID(event) {
+					eventID = parseInt(event[3],10);
+					if (eventID < 0) {
+						eventID = (Math.pow(2, 32) + eventID).toString(2);
+					}
+					else {
+						eventID = eventID.toString(2);
+					}
+					lengthToCut = (eventID.length - 16);
+					event[3] = parseInt(eventID.substring(lengthToCut),2);
+				}
+                result.forEach(function(item) {
+					cutEventID(item);
+                    Utilities.print(
+                        item.reduce(function(accum, itm){
+                            return accum + '"' + String(itm) + '", '
+                        }, "[ ").slice(0, -2) + " ],"
+                    );
+                });
+            }
+            manager(["EndTest"]);
+        },
+        "EndTest" : function() {
+            Utilities.print("Execution finished.");
+            setTimeout(function(){ jbiz.exit(); }, 1500);
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>
+
+

@@ -1,0 +1,76 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+ body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+
+var testName ="Software update";
+
+// Source for update download (see UpdateSource in Enumerators.js)
+var updateSource = UpdateSource.INTERNET;
+
+// SW version
+// The is a substring of the packet name can be seen in the UI, e.g.
+// "V2.3.31", "2.3.31", "3.31"
+// The version can be DO_NOT_CHECK/DO_NOT_CHANGE if and only if support of old
+// versions is set to '0'. In this case the version selected by default will be
+// used for update
+var version = DO_NOT_CHANGE;
+
+// Image (components) to be updated
+// There are several possible values:
+// - "all" to update all images in the packet
+// - DO_NOT_CHANGE to update only images selected by default (usually
+//   having newer versions)
+// - list of image names (versions are not necessary), e.g. ["Freeman", "FEA"]
+//
+// If support of old SW versions is set to '0' then only DO_NOT_CHANGE is
+// a permissible value.
+var images = DO_NOT_CHANGE;
+
+// Search for all SW versions including versions earlier or equal
+// to the already installed one
+// Values:
+// - NO to search for the newest available version newer than the current one
+// - YES to get a list of all available versions and select one based on the
+//   "version" variable
+// - DO_NOT_CHANGE to skip setup and use current settings
+var oldVersions = NO;
+
+//TEST INITIALISATION
+
+var idTestProcess="";
+window.onload = function(){
+    kernel.require('./Libs/SWupdate.js',
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.
+            SWupdate.startTest(updateSource, version, images, oldVersions);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            jbiz.writeLine("WARN: './Libs/SWupdate.js' is not uploaded.");
+            setTimeout(function(){jbiz.exit()},3000);
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

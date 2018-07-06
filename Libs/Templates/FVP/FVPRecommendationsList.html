@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../kernel.js"></script>
+<script type="text/javascript">
+
+
+var service_num = 1   // number of expected found suggestions
+
+// search condition
+
+// "crid://digitaluk.co.uk/recommendations/categories/all"  
+// "crid://digitaluk.co.uk/recommendations/categories/comedy"
+// "crid://digitaluk.co.uk/recommendations/categories/soap"
+
+var expected_array = [[ "crid://digital.co.uk/recommendations/categories/comedy", "V2: Comedy", "V2: Hilarious and funny programmes guaranteed to make you laugh and giggle.", "V2:MDS_904 Day 1, program 2", "Second title V2:MDS_904 Day 1, program 2", "http://127.0.0.1:3555?http://image.fvcmd.test/images/MDS_904/programs/jpeg/prg_002", ]]
+
+
+// ------DO NOT CHANGE SCRIPT BELOW THIS LINE EXCEPT CONDITION QUERY--------
+window.onload = function(){
+    kernel.require(['../Utilities.js', '../FVP.js'], function(){manager(["Connect"])});
+}
+
+function manager(args) {
+
+    var steps = {
+        
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["APIRequest"]); });
+        },
+
+        "APIRequest" : function(){
+          var fvp_recomm_list = de.loewe.sl2.table.fvp.recommendationslist;
+          var queryDef  =  
+            {   
+
+                // CHANGE CONDITION STRING ACCORDING TO TEST SPEC
+                selections: [ { field: 0, conditionType: 1, condition: "crid://digital.co.uk/recommendations/categories/comedy" } ],
+                fields:     [ 0, 1, 2, 3, 4, 5 ],
+            //    orders:     [ { field: 0, direction: 1 } ]
+
+            }
+            function execute_request() {
+              FVP.GetRequest(expected_array, fvp_recomm_list, queryDef, function() { manager(["EndTest"]);}, service_num);
+            };
+            var startTime = new Date().getTime();
+            var interval = setInterval(function(){
+              if(new Date().getTime() - startTime > 15000){
+                clearInterval(interval);
+                Utilities.print("No answer from TV's database. Probably bad request")
+                manager(["EndTest"]);
+              }
+                execute_request();
+            }, 2000);
+        },
+
+        "EndTest" : function() {
+            Utilities.print("\nExecution finished.");
+            setTimeout(function(){ jbiz.exit(); }, 1500);
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>
+

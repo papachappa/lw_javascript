@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+     body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>    
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script>
+//TEST SETTINGS
+var testName = "Compare services from list with expected result";    
+    
+//EXPECTED RESULT
+
+/*
+name of service list that should be verified. Overall list will be checked 
+if parameter is omitted or "".
+*/
+var listName = "DVB-C";
+
+/*
+ 'expectedServiceList' - array of all services (in any order). 
+ Each service should be described in format: 
+ [ "Name", "ChNum", "SID","TSID", "ONID", "Type", "Visible", "Selectable",
+  "URI", "Frontend", "Satid", "Frequency", "Modulation", "Symbolrate", 
+  "Bandwidth", "Coderate", "plpid", "datasliceid", "Inversion", 
+  "Polarization", "Band", "Modcod", "dvbtpriority", "onid","sid","tsid" ] 
+ You can use ./GetExpectedResult/PrintServicesFromServiceListsWithURI.html 
+ script to get correct expected result.
+*/
+var expectedServiceList = [
+[ "01_FTA", "1", "1", "1", "133", "4", "1", "1", "DNC", "3", "NA", "474000", "8", "4000", "NA", "NA", "NA", "NA", "1", "NA", "NA", "NA", "NA" ],
+[ "02_Scram", "2", "2", "1", "133", "4", "1", "1", "DNC", "3", "NA", "474101", "8", "4000", "NA", "NA", "NA", "NA", "1", "NA", "NA", "NA", "NA" ]
+];
+
+/*
+DVB-C - 100
+DVB-C2 - 100 
+DVB-T - 100 
+DVB-T2 - 100 
+DVB-S - 1000 
+DVB-S2 - 1000 
+*/
+var frequencyRange = 100;
+
+/*
+1(%) deviation for C,S,S2. Should be set in percent
+*/
+var symbolrateRange = 1;
+
+
+//TEST STEPS  
+var idTestProcess=""; //variable to display log on WeBiz screen 
+window.onload = function(){
+    kernel.require(
+        './Libs/Scenarios/CheckServiceListWithURI.js',
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 600, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.            
+            CheckServiceListWithURI.startTest(listName,
+											  expectedServiceList,
+                                              frequencyRange,
+                                              symbolrateRange)
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide(); 
+            jbiz.writeLine("WARN: './Libs/Scenarios/CheckServiceListWithURI.js' is not uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }                       
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

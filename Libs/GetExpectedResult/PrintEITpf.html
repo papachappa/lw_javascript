@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../Enumerators.js"></script>
+<script src="../kernel.js"></script>
+<script type="text/javascript">
+
+var testName = "EIT p/f collection";
+// Service list
+var serviceList = "ASTRA LCN";
+//Any broadcasting service (from actual TS)
+var broadcastingService = ["1226", MediaType.TV, "ASTRA LCN"];
+// Filter to collect TV or Radio services
+//var ServiceType = MediaType.TV;
+//var ServiceType = MediaType.RADIO;
+var ServiceType = "all";
+
+//Set number of attempts for updating of EITp/f
+var updateCounter = 4;
+/*Additional timeout in seconds before EIT p/f collection.
+  Common timeout = 15 second + additional timeout.
+*/
+var timeout = 0;
+
+//Filter fields. Set = [] if all fields should be print.
+/*var fieldsToDelete = [SL_Fields.PRESENT_EVENT_SHORTINFO,
+					  SL_Fields.PRESENT_EVENT_LONGINFO,
+					  SL_Fields.FOLLOWING_EVENT_SHORTINFO,
+					  SL_Fields.FOLLOWING_EVENT_LONGINFO];
+*/
+var fieldsToDelete = [];
+
+//TEST INITIALISATION
+printingFunction = function(services) {
+	var FIELDS = [SL_Fields.SERVICE_NAME, SL_Fields.CHANNEL_NUMBER,
+		SL_Fields.SID, SL_Fields.TSID, SL_Fields.ONID,
+		SL_Fields.PRESENT_EVENT_START, SL_Fields.PRESENT_EVENT_STOP,
+		SL_Fields.PRESENT_EVENT_NAME, SL_Fields.PRESENT_EVENT_SHORTINFO,
+		SL_Fields.PRESENT_EVENT_LONGINFO, SL_Fields.FOLLOWING_EVENT_START,
+		SL_Fields.FOLLOWING_EVENT_STOP, SL_Fields.FOLLOWING_EVENT_NAME,
+		SL_Fields.FOLLOWING_EVENT_SHORTINFO,
+		SL_Fields.FOLLOWING_EVENT_LONGINFO, SL_Fields.MEDIA_TYPE];
+	var fieldsFilter = [];
+	var printServices = [];
+	// Headers for result pretty printing
+	var logLabels = EITpfQuery.FIELDS.map(
+		function(item) {
+			return Utilities.getKey(SL_Fields, item);
+		});
+
+	if (fieldsToDelete.length != 0) {
+		fieldsToDelete.forEach(
+			function(item) {
+				fieldsFilter.push(FIELDS.indexOf(item));
+			}
+		);
+	}
+
+	if (fieldsToDelete.length != 0) {
+		if (fieldsFilter.length == 0) {
+			Utilities.print("WARN: Fields to delete were set "
+							+ "incorrectly. No fields will be deleted");
+			services.forEach(
+				function(item) {
+					item = item.slice();
+					servicesForCorrectHandling.push(item);
+				}
+			);
+		}
+		else {
+			services.forEach(
+				function(item) {
+					item = item.slice();
+					for (var k = fieldsFilter.length; k > 0; k--) {
+						item.splice(fieldsFilter[k-1], 1); 
+					}
+					printServices.push(item);
+				}
+			);
+			for (var k = fieldsFilter.length; k > 0; k--) {
+				logLabels.splice(fieldsFilter[k-1], 1); 
+			}
+		}
+	}
+	else {
+		services.forEach(
+			function(item) {
+				item = item.slice();
+				printServices.push(item);
+			}
+		);
+	}
+	Utilities.print(logLabels);
+	Utilities.print("...");
+	printServices.forEach(function(item) {
+		Utilities.print("	" +
+			item.reduce(function(accum, itm){
+				return accum + '"' + String(itm) + '", '
+			}, "[ ").slice(0, -2) + " ],"
+		);
+	});
+	setTimeout(function(){jbiz.exit()},1500);
+}
+
+var idTestProcess="";
+window.onload = function(){
+    kernel.require('../EITpfQuery.js',
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.
+            EITpfQuery.getEITpf(broadcastingService,
+								function(results){
+									printingFunction(results);
+								},
+								serviceList,
+								ServiceType,
+								updateCounter,
+								timeout);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            jbiz.writeLine("WARN:'../EITpfQuery.js' is not uploaded.'");
+            setTimeout(function(){jbiz.exit()},3000)
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>     
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script>
+ 
+//TV SETTINGS 
+var testName = "Telenet test 05 step 1: Update Location and Frontend";
+ 
+  
+//TEST STEPS  
+var idTestProcess=""; //variable to display log on WeBiz screen 
+window.onload = function(){
+    kernel.require(
+        ['./Libs/Scan.js','./Libs/Utilities.js','./Libs/InitialScan.js'],
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.            
+            manager(["Connect"]);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide(); 
+            jbiz.writeLine("WARN: 'One of libs can not be uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }                       
+    );
+};
+
+function manager(args) {
+
+    var steps = {
+        "Connect" : function() {
+            Utilities.print(testName);
+            Utilities.print(" ");
+            Utilities.print("Test description:");
+            Utilities.print("1. Connect PC to TV.");
+            Utilities.print("2. Set TV settings to GERMANY+DVB-C");
+            Utilities.print("3. Verify Telenet is not available for selection");
+            Utilities.print("4. Set TV settings to BELGIUM+DVB-T");
+            Utilities.print("5. Verify Telenet is not available for selection");
+            Utilities.print("4. Set TV settings to BELGIUM+DVB-C");
+            Utilities.print("5. Verify Telenet is available for selection");
+            Utilities.print("6. Execute scan and check number of found services");
+            Utilities.print(" ");
+            Utilities.print("Test execution:");
+            Utilities.connectToTV(function(){ manager(["TvSetting1"]); });
+        },
+        "TvSetting1" : function() {
+			var tvSettings= {
+				location: { 
+					operatingValue: Location.GERMANY, 
+					initialValue: DO_NOT_CHECK, 
+				},
+				frontend: {
+					operatingValue: Source.DVB_C,
+					initialValue: DO_NOT_CHECK, 
+				},
+			};
+			Scan.setTVSettings(function(){
+			    manager(["GetNids1"]);
+		    }, tvSettings);
+        },
+        "GetNids1" : function() {
+			Scan.getNIDsForCurrentFrontend(function(Nids){
+				manager(["CheckNids1", Nids]);
+				})
+        },
+        "CheckNids1" : function(Nids) {
+			if (Nids[0][0].indexOf(String(Operator.TELENET)) != -1) {
+				Utilities.print("#VERIFICATION FAILED - Telenet is available"
+				   + " for GERMANY + DVB-C");				
+			}
+			else {
+				Utilities.print("#VERIFICATION PASSED - Telenet is NOT available"
+				   + " for GERMANY + DVB-C");				
+			}
+			manager(["TvSetting2"]);	
+        },
+        "TvSetting2" : function() {
+			var tvSettings= {
+				location: { 
+					operatingValue: Location.BELGIUM, 
+					initialValue: DO_NOT_CHECK, 
+				},
+				frontend: {
+					operatingValue: Source.DVB_C,
+					initialValue: DO_NOT_CHECK, 
+				},
+			};
+			Scan.setTVSettings(function(){
+			    manager(["GetNids2"]);
+		    }, tvSettings);
+        },
+        "GetNids2" : function() {
+			Scan.getNIDsForCurrentFrontend(function(Nids){
+				manager(["CheckNids2", Nids]);
+				})
+        },
+        "CheckNids2" : function(Nids) {
+			if (Nids[0][0].indexOf(String(Operator.TELENET)) != -1) {
+				Utilities.print("#VERIFICATION FAILED - Telenet is available"
+				   + " for BELGIUM + DVB-T");				
+			}
+			else{
+				Utilities.print("#VERIFICATION PASSED - Telenet is NOT available"
+				   + " for BELGIUM + DVB-T");				
+			}
+			manager(["CorrectScan"]);
+        },
+        "CorrectScan" : function(){
+			var tvSettings= {
+				location: { 
+					operatingValue: Location.BELGIUM, 
+					initialValue: DO_NOT_CHECK, 
+				},
+				connectedCables: {
+					operatingValue: [NO,NO,YES,NO,NO], 
+				},
+				frontend: {
+					operatingValue: Source.DVB_C,
+					initialValue: DO_NOT_CHECK, 
+				},
+			};
+
+			//OPERATOR ID
+			var operator = Operator.TELENET;
+
+			//SCAN SETTINGS
+			var scanSettings = {
+				scramblingSelectable: { 
+					operatingValue: DO_NOT_CHANGE,  
+					initialValue: YES,
+				},
+				searchScrambled: { 
+					operatingValue: DO_NOT_CHANGE,  
+					initialValue: YES,
+				},
+				lcnSelectable: { 
+					operatingValue: DO_NOT_CHANGE, 
+					initialValue: NO,
+				},
+				lcnAccepted: { 
+					operatingValue: DO_NOT_CHANGE,  
+					initialValue: YES,
+				},
+				searchingMethodSelectable: { 
+					operatingValue: DO_NOT_CHANGE,  
+					initialValue: NO,
+				},
+				searchMethod: {
+					operatingValue: DO_NOT_CHANGE,
+					initialValue: SearchMethod.NETWORK,
+				},
+				networkidSelectable: { 
+					operatingValue: DO_NOT_CHANGE,  
+					initialValue: YES,
+				},
+				networkid: {
+					operatingValue: DO_NOT_CHANGE,
+					initialValue: 22,
+				},
+				networkidNoneSelectable: { 
+					operatingValue: DO_NOT_CHANGE, 
+					initialValue: NO,
+				},
+				networkidNone: { 
+					operatingValue: DO_NOT_CHANGE, 
+					initialValue: NO,
+				},
+				frequencySelectable: { 
+					operatingValue: DO_NOT_CHANGE, 
+					initialValue: YES,
+				},
+				frequency: {
+					operatingValue: DO_NOT_CHANGE, 
+					initialValue: 322000,
+				},
+				hdPreferredSelectable: { 
+					operatingValue: DO_NOT_CHANGE, 
+					initialValue: NO,
+				},
+				hdPreferred: { 
+					operatingValue: DO_NOT_CHANGE, 
+					initialValue: NO,
+				},
+			}; 
+			
+			var numberTvServices = 12;
+			var numberRadioServices = 3; 
+			
+			InitialScan.startTest(tvSettings,
+								 operator,
+								 scanSettings,
+								 numberTvServices,
+								 numberRadioServices)
+		},
+    };
+    
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>    
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/> 
+<script src="../kernel.js"></script>
+<script src="../Enumerators.js"></script>
+<script>
+// block of required parameters
+var listName = "DVB-C"; //Required List name
+//Overall list will be used if listName is undefined
+
+<!--DO NOT CHANGE SCRIPT AFTER THIS LINE--!>
+window.onload = function(){
+    kernel.require('../ServiceList.js', 
+        function(){manager(["Connect"])});            
+}
+
+function manager(args) {
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["GetListUID"]); });
+        },
+        "GetListUID" : function() {
+            if (listName == "OVERALL") {
+                manager(["GetList", ""]);
+            }
+            else {
+            ServiceList.getServicelistUID( function(listUID){
+                        manager(["GetList", listUID]);
+                    }, listName);
+            }
+        },
+        "GetList" : function(UID) {
+            if (Utilities.numberOfElements(UID[0]) != 1) {
+                Utilities.print("WARN - "+ Utilities.numberOfElements(UID[0])
+                                + " service lists with name '" 
+                                + listName
+                                + "' are found. Test stopped.");
+                manager(["EndTest"]);   
+            }
+            else {
+                ServiceList.getServicesFromList(
+                    function(services){
+                        manager(["CheckServicelist",services]);
+                    }, UID[0][0],
+                    [0,6,8,9,10,21,24,25,2]);
+            }
+        },
+        "CheckServicelist" : function(income) {
+            if (income[0].length == 0) {
+                Utilities.print("No services are found.");
+            }
+            else {
+				var services = ServiceList.uriRefactoring(income[0],8);
+				services.forEach(
+					function(item) {
+						item[8] = "DNC";
+					}
+				)
+				services.forEach(
+					function(item) {
+						Utilities.print(Utilities.prettyPrint(item));
+					}
+				)
+            }
+           manager(["EndTest"])
+        },
+        "EndTest" : function() {
+            Utilities.print("Execution finished.");
+        },
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>   
+    
+    

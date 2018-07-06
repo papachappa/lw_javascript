@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../../Libs/Enumerators.js"></script>     
+<script src="../../Libs/kernel.js"></script>
+<script type="text/javascript">
+ 
+//TEST SETTINGS 
+var testName = "Check if CAM authentication is executed during 90 sec";
+  
+//TEST STEPS
+var idTestProcess=""; //variable to display log on WeBiz screen
+window.onload = function(){
+    kernel.require(
+        ['../../Libs/Utilities.js', '../../Libs/CAM.js', '../../Libs/Messages.js'],
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.            
+            manager(["Connect"]);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide(); 
+            jbiz.writeLine("WARN: One of the libs can not be uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }                       
+    );
+};
+
+var timerID;
+var auth = false;
+
+function manager(args) {
+    var steps = {
+        "Connect" : function() {
+            Utilities.print(testName);
+            Utilities.print(" ");
+            Utilities.print("Test description:");
+            Utilities.print("1. Connect PC to TV.");
+            Utilities.print("2. Wait for CAM authentication menu is open"
+                                                + " during 90sec");
+            Utilities.print("3. Wait for authentication menu is closed"
+                                                + " during 90sec");
+            Utilities.print(" ");
+            Utilities.print("Test execution:");
+            Utilities.connectToAPIs(
+                        function(){ manager(["WaitMenu"]); },
+                        ["de.loewe.sl2.str.software.update.current.packet",
+                         "de.loewe.sl2.str.servicemode.chassis.name",
+                         "de.loewe.sl2.common.intf.vstr.menu",
+                         "de.loewe.sl2.messages.messageid",
+                         "de.loewe.sl2.messages.selectors",
+                         "de.loewe.sl2.system.action.key",
+                         "de.loewe.sl2.messages.action.confirm",
+                         "de.loewe.sl2.common.intf.cam.list"]);
+        },
+        "WaitMenu" : function() {
+            Utilities.print("Waiting for CAM authentication menu...")
+            var camMenu = de.loewe.sl2.common.intf.vstr.menu;
+            timerID = window.setTimeout(timeOutOpen, 90000);
+            camMenu.onChange.connect(checkAuthMenu)
+            
+            function checkAuthMenu(){
+                var currentMenu = camMenu.getValue()
+                if (currentMenu[6] == "Authentication in progress") {
+                    Utilities.print("#VERIFICATION PASSED: Authentication menu"
+                                        + " is displayed.");
+                    window.clearTimeout(timerID);
+                    camMenu.onChange.disconnect(checkAuthMenu);
+                    manager(["WaitMenuClosed"])
+                }
+                if (currentMenu[6] == "Authentication success") {
+                    Utilities.print("#VERIFICATION PASSED: Menu"
+                        + " with succeed authentication is displayed.");
+                    auth = true;
+                    window.clearTimeout(timerID);
+                    camMenu.onChange.disconnect(checkAuthMenu);
+                    manager(["WaitMenuClosed"])
+                }   
+            }
+            function timeOutOpen(){
+                Utilities.print("#VERIFICATION FAILED: Authentication menu"
+                            + " is NOT displayed during 90sec.");
+                manager(["EndTest"])  
+            }
+            
+        },
+        "WaitMenuClosed" : function() {
+            Utilities.print("Waiting all CAM menus are closed...")
+            var camMenu = de.loewe.sl2.common.intf.vstr.menu;
+            timerID = window.setTimeout(timeOutClose, 90000);
+            camMenu.onChange.connect(CheckAllMenuClosed);
+            
+            function CheckAllMenuClosed(){
+                var currentMenu = camMenu.getValue()
+                if (currentMenu.length == 0) {
+                    Utilities.print("#VERIFICATION PASSED: All CAM menus"
+                                    + " are closed.");
+                    if (auth) {
+                        Utilities.print("#VERIFICATION PASSED: " 
+                            +"Authentication successfully executed.");
+                    }
+                    else {
+                        Utilities.print("#VERIFICATION FAILED: "
+                            + "Authentication was not executed succesfully.");
+                        }
+                    window.clearTimeout(timerID);
+                    manager(["GetAuthState"])
+                }
+                if (currentMenu[6] == "Authentication success") {
+                    auth = true;
+                
+                }
+            }
+            function timeOutClose(){
+                var currentMenu = camMenu.getValue()
+                Utilities.print("#VERIFICATION FAILED: CAM menus"
+                            + " is NOT closed during 90sec.");
+                Utilities.print("WARN: Next menu is displayed:")
+                Utilities.print(currentMenu)
+                manager(["CloseUI"])  
+            }
+        },
+        "CloseUI" : function() {
+            Messages.closeMessages(
+				function() {
+                    Utilities.print("Try to close CAM menus.");
+                    PressButton.singlePress(KEY.END);
+                    var camMenu = de.loewe.sl2.common.intf.vstr.menu;
+                    var currentMenu = camMenu.getValue()
+                    if (currentMenu.length == 0) {
+                        Utilities.print("#VERIFICATION PASSED: All CAM menus"
+                                    + " are closed.");
+                        manager(["GetAuthState"])
+                    }
+                    else {
+                        Utilities.print("WARN: Next menu is displayed:")
+                        Utilities.print(currentMenu)
+                        manager(["CloseUI"])
+                    }
+				},
+				Message.NO_MESSAGE
+			);
+        },
+        "GetAuthState" : function() {
+            Utilities.print("Check authentication state.");
+            var api = de.loewe.sl2.common.intf.cam.list;
+            // Get all lists
+            var queryCam  =  {
+                fields:       [0,10],
+            };
+            Utilities.getTableValues(function(CAMsState){
+										manager(["CheckAuthState", CAMsState])},
+									 api, queryCam);
+        },
+        "CheckAuthState" : function(allStates) {
+			var allCAMsState = allStates[0];
+			if (allCAMsState.length == 0) {
+			Utilities.print("#VERIFICATION FAILED: NO CAMs are "
+						+ "found.");
+			}
+			else {
+				allCAMsState.forEach(
+				function(item) {
+					var slote = item[0]-1;
+					if (item[1] == 0) {
+						Utilities.print("#VERIFICATION FAILED: CAM "
+							+ "in slot " + slote  + " is not "
+							+ "authenticated.");
+					}
+					else {
+						Utilities.print("#VERIFICATION PASSED: CAM "
+							+ "in slot " + slote  + " is "
+							+ "authenticated.");
+						}
+				});
+			}
+			manager(["EndTest"])
+        },
+        "EndTest" : function() {
+            Utilities.print("Test finished.");
+            Utilities.printTestResult();
+            Utilities.endTest()
+        }
+    };
+    
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

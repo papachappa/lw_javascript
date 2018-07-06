@@ -1,0 +1,72 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+ body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>     
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script>
+//TV SETTINGS
+var testName = "Create Complex favorite list"
+
+/* 
+ Name of new favorite list
+ If name is "", then list with 'NewFavoriteList' name will be created
+ATTENTION! UI doesn't allow to use one list name twice, but you can do it
+ using this script 
+*/       
+var listName = "Test2";
+
+/* 
+ Media type of services that new list should contain
+ 1,4 - TV, 2,8 - Radio
+ you can use Enumerators.Mediatype for available values 
+*/
+var listType = MediaType.TV;
+
+/*
+ Array  of channel numbers of services in initialList that should be     
+ added in new favorite list.
+ ATTENTION! UI doesn't allow to add one service twice into list , but you can do it
+ using this script 
+*/
+var addChannels = [
+    [20,"UPC"],
+    [6,"Ziggo"],
+];
+               
+//TEST INITIALISATION  
+var idTestProcess="";
+window.onload = function(){
+    kernel.require('./Libs/ComplexFavoriteList.js',
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.            
+            ComplexFavoriteList.startTest(listType,
+                                      listName,
+                                      addChannels)
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide(); 
+            jbiz.writeLine("WARN: './Libs/ComplexFavoriteList.js' is not uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }                       
+    );
+};            
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

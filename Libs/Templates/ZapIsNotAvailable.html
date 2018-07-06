@@ -1,0 +1,272 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>     
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script>
+	
+//Test settings
+var testName = "CI+ test 7.2.9.4 step 12.1: CI scan";
+
+//checked service
+var listName = "ASTRA";
+var channelNumber = 103; 
+var serviceType = MediaType.TV;
+
+//channel that should be used as initial to check zap by channel number 
+var initilaService = "2";
+
+//channel number that should be used as initial to check P+ button
+var Pplus = 102;
+
+//channel number that should be used as initial to check P- button
+var Pminus = 105;
+
+//EXPECTED RESULT
+
+//TEST STEPS  
+var idTestProcess=""; //variable to display log on WeBiz screen 
+window.onload = function(){
+    kernel.require(
+        ['./Libs/ChannelChange.js', './Libs/ServiceList.js', './Libs/PressButton.js'],
+        function(){ 
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.            
+            manager(["Connect"]);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide(); 
+            jbiz.writeLine("WARN: './Libs/ChannelChange.js' can not be uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }                       
+    );
+};
+var testedListUID;
+var expDvbTriplet;
+var reg = /onid=\d+&sid=\d+&tsid=\d+/;
+function manager(args) {
+
+    var steps = {
+        "Connect" : function() {
+            Utilities.print(testName);
+            Utilities.print(" ");
+            Utilities.print("Test description:");
+            Utilities.print("1. Connect PC to TV.");
+            Utilities.print("2. Check is service present in servicelist");
+            Utilities.print("3. Execute channel change to service from"
+                            + " tested list.");
+            Utilities.print("4. Insert tested channel number and then OK");
+            Utilities.print("5. Check channel change is not executed");
+            Utilities.print("6. Execute channel change to service that is"
+                            + " placed in the list before tested one");
+            Utilities.print("7. Press P+");
+            Utilities.print("8. Check channel change is not executed");
+            Utilities.print("9. Execute channel change to service that is"
+                            + " placed in the list before tested one");
+            Utilities.print("10. Press P-");
+            Utilities.print("11. Check channel change is not executed");
+            Utilities.print(" ");
+            Utilities.print("Test execution:");
+            Utilities.connectToTV(function(){ manager(["GetListUID"]); });
+        },
+        "GetListUID" : function() {
+            Utilities.print( "---- Check is tested service is present");
+            ServiceList.getServicelistUID(
+                function(serviceListUID){
+                    manager(["GetServiceInfo", serviceListUID]);
+                }, listName);
+        },
+        "GetServiceInfo" : function(listUID) {
+            if (Utilities.numberOfElements(listUID[0]) != 1) {
+                Utilities.print("#ERROR: "
+                                + Utilities.numberOfElements(listUID[0])
+                                + " servicelists '" + listName
+                                + "' are found.");
+                Utilities.print("Zap will not be checked.");
+                manager(["EndTest"]);;
+            }
+            else {
+                testedListUID = listUID[0];
+                var query  =  {
+                    selections:	[
+                        { field: 1,
+                          conditionType: 1,
+                          condition: String(listUID[0]) },
+
+                        { field: 6,
+                          conditionType: 1,
+                          condition: channelNumber},
+
+                        { field: 21,
+                          conditionType: 1,
+                          condition: serviceType }
+                    ],
+                    fields: [7,21,0,2,6,1],
+                }
+                var api = de.loewe.sl2.table.servicelist.list;
+
+                Utilities.print("Get checked service info...");
+                Utilities.getTableValues(function(serviceInfo){
+                    manager(["RememberTestedService", serviceInfo]);
+                }, api, query);
+            }
+        },
+        "RememberTestedService" : function(serviceInfo) {
+            if (serviceInfo[0].length != 0 ){
+                if (serviceInfo[0][0][4] != channelNumber
+                    && serviceInfo[0][0][1] != serviceType) {
+                    Utilities.print( "#VERIFICATION FAILED: Tested service"
+                        + " is not found in expected list.");
+                    manager(["EndTest"]);;
+                }
+                else {
+                    expDvbTriplet = String(reg.exec(serviceInfo[0][0][3]));
+                    Utilities.print( "#VERIFICATION PASSED: Tested service"
+                        + " is present in expected list.");
+                    manager(["DirectZapPrecon", serviceInfo])
+                }
+            }
+            else {
+                Utilities.print("#ERROR: Services corresponding request "
+                                    + "are not found.");
+                manager(["EndTest"]);;
+            }
+        },
+        "DirectZapPrecon" : function() {
+            Utilities.print( "---- Check direct zap");
+            Utilities.print( "Zap to service from '" +listName 
+                                            + "' service list.");
+			ChannelChange.zapWithVerification(function(result){
+				manager(["CheckDirectZapPrecon",result]);
+				}, initilaService, serviceType, listName)	
+        },
+        "CheckDirectZapPrecon" : function(zapResult) {
+			if ( !zapResult[0]){
+				Utilities.print("#VERIFICATION FAILED: Channel Change"
+                    + "to inital services is not executed correctly.");	
+                Utilities.print("#VERIFICATION FAILED: Direct zap"
+                    + "will not be checked");
+                manager(["PplisPrecon"]);
+			}
+            else {
+                manager(["DirectZap"]);
+            }
+        },
+        "DirectZap" : function() {
+            var array = String(channelNumber);
+            for(var key in array){
+                PressButton.singlePress(array[key])
+            }
+            PressButton.singlePress(Key.OK)
+            window.setTimeout(function(){
+                var currentChannel = de.loewe.sl2.tvservice
+                    .uri.main.getValue();
+				if (String(reg.exec(currentChannel)) == expDvbTriplet) {
+					Utilities.print("#VERIFICATION FAILED: Channel "
+                                    + "change IS executed.");
+				}
+				else {
+					Utilities.print("#VERIFICATION PASSED: Channel "
+                                    + "change is NOT executed.");
+				}
+                manager(["PplisPrecon"]);
+            }, 5000)
+        },
+        "PplisPrecon" : function() {
+            Utilities.print( "---- Check P+ zap");
+            Utilities.print( "Zap to service from '" +listName 
+                    + "' service list to check P+ zap.");
+			ChannelChange.zapWithVerification(function(result){
+				manager(["CheckPplisPrecon",result]);
+				}, Pplus, serviceType, listName)	
+        },
+        "CheckPplisPrecon" : function(zapResult) {
+			if ( !zapResult[0]){
+				Utilities.print("#VERIFICATION FAILED: Channel Change"
+                    + "is not executed correctly.");	
+                Utilities.print("#VERIFICATION FAILED: P+ zap"
+                    + "will not be checked");
+                manager(["PminusPrecon"]);
+			}
+            else {
+                manager(["PplisZap"]);
+            }
+        },
+        "PplisZap" : function() {
+            PressButton.singlePress(Key.CHANNEL_UP)
+            window.setTimeout(function(){
+                var currentChannel = de.loewe.sl2.tvservice
+                    .uri.main.getValue();
+				if (String(reg.exec(currentChannel)) == expDvbTriplet) {
+					Utilities.print("#VERIFICATION FAILED: Channel "
+                                    + "change is executed.");
+				}
+				else {
+					Utilities.print("#VERIFICATION PASSED: Channel "
+                                    + "change is NOT executed.");
+				}
+                manager(["PminusPrecon"]);
+            }, 5000)
+        },
+        "PminusPrecon" : function() {
+            Utilities.print( "---- Check P- zap");
+            Utilities.print( "Zap to service from '" +listName 
+                    + "' service list to check P- zap.");
+			ChannelChange.zapWithVerification(function(result){
+				manager(["CheckPminusPrecon",result]);
+				}, Pminus, serviceType, listName)	
+        },
+        "CheckPminusPrecon" : function(zapResult) {
+			if ( !zapResult[0]){
+				Utilities.print("#VERIFICATION FAILED: Channel Change"
+                    + "is not executed correctly.");	
+                Utilities.print("#VERIFICATION FAILED: P- zap"
+                    + "will not be checked");
+                manager(["EndTest"]);
+			}
+            else {
+                manager(["PminusZap"]);
+            }
+        },
+        "PminusZap" : function() {
+            PressButton.singlePress(Key.CHANNEL_DOWN)
+            window.setTimeout(function(){
+                var currentChannel = de.loewe.sl2.tvservice
+                    .uri.main.getValue();
+				if (String(reg.exec(currentChannel)) == expDvbTriplet) {
+					Utilities.print("#VERIFICATION FAILED: Channel "
+                                    + "change is executed.");
+				}
+				else {
+					Utilities.print("#VERIFICATION PASSED: Channel "
+                                    + "change is NOT executed.");
+				}
+                manager(["EndTest"]);
+            }, 5000)
+        },
+        "EndTest" : function() {
+            Utilities.print("Test finished.");
+            Utilities.printTestResult();
+            Utilities.endTest()
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html> 

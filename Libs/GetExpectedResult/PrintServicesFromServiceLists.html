@@ -1,0 +1,77 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>    
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/> 
+<script src="../kernel.js"></script>
+<script>
+// block of required parameters
+var listName = "UPC"; //Required List name
+//Overall list will be used if listName is undefined
+
+<!--DO NOT CHANGE SCRIPT AFTER THIS LINE--!>
+window.onload = function(){
+    kernel.require('../ServiceList.js', 
+        function(){manager(["Connect"])});            
+}
+
+function manager(args) {
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["GetListUID"]); });
+        },
+        "GetListUID" : function() {
+            if (listName == "OVERALL") {
+                manager(["GetList", ""]);
+            }
+            else {
+            ServiceList.getServicelistUID( function(listUID){
+                        manager(["GetList", listUID]);
+                    }, listName);
+            }
+        },
+        "GetList" : function(UID) {
+            if (Utilities.numberOfElements(UID[0]) != 1) {
+                Utilities.print("WARN - "+ Utilities.numberOfElements(UID[0])
+                                + " service lists with name '" 
+                                + listName
+                                + "' are found. Test stopped.");
+                manager(["EndTest"]);   
+            }
+            else {
+                ServiceList.getServicesFromList(
+                    function(services){
+                        manager(["CheckServicelist",services]);
+                    }, UID[0][0]);
+            }
+        },
+        "CheckServicelist" : function(services) {
+            if (Utilities.numberOfElements(services[0]) == 0) {
+                Utilities.print("No services are found in '" +listName+"' list.");
+            }
+            else {
+                for(var key in services[0]){
+                    Utilities.print("[ "
+                                    + '"' + services[0][key][0] + '", '
+                                    + '"' + services[0][key][1] + '", '
+                                    + '"' + services[0][key][2] + '", '
+                                    + '"' + services[0][key][3] + '", '
+                                    + '"' + services[0][key][4] + '", '
+                                    + '"' + services[0][key][5] + '", '
+                                    + '"' + services[0][key][6] + '", '
+                                    + '"' + services[0][key][7] + '"'
+                                    + " ],");
+                };
+            }
+            manager(["EndTest"])
+        },
+        "EndTest" : function() {
+            Utilities.print("Execution finished.");
+        },
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>   
+    
+    

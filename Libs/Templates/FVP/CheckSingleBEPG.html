@@ -1,0 +1,90 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../../Libs/Enumerators.js"></script>
+<script src="../../Libs/kernel.js"></script>
+<script type="text/javascript">
+// block of required parameters
+
+  /* List of services under test
+   * - channelNumber: channel number
+   * - mediaType: media type of required services
+   * - servicesList: name of services list where channel is present
+   * See example:
+   * var services = [
+   *      [1, MediaType.TV, "DVB-S"],
+   *      [8, MediaType.TV, "DVB-S"],
+   *      [3, MediaType.RADIO "DVB-S"],
+   * ];
+ */
+var services = [[ ["2", "769", "9018"] ]]
+
+
+var expectedResult = [
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1516590000" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1516588800" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1516588200" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1516587000" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1516586400" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1516585200" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1516584600" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1516583400" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1516582800" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1516581600" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1516581000" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 2", "crid://program.crid.fvct.duk/MDS_901/prg_002", "1516579800" ],
+[ "-0", "1", "769", "9018", "V0:MDS_901 Day 1, program 1, ep1", "crid://program.crid.fvct.duk/MDS_901/prg_001", "1516579200" ],
+]
+
+window.onload = function(){
+    kernel.require(['../../Libs/EPGquery.js', '../../Libs/BEPGquery.js'],
+        function(){manager(["Connect"])});
+}
+
+function manager(args) {
+    
+    var steps = {
+        "Connect" : function() {
+            Utilities.connectToTV(function() { manager(["MakeQuery"]); });
+        },
+        // "GetServices" : function() {
+        //     EPGquery.getServicesWithEPG(
+        //         function(result) { manager(["Results", result]);},
+        //         listName,
+        //         fields,
+        //         function() { manager(["EndTest"]);});
+        // },
+        // "Results" : function(result) {
+        //     var result = result[0];
+            
+        //     if (result.length == 0) {
+        //         Utilities.print("No services retrieved.");
+        //         manager(["EndTest"]);    
+        //     }
+        //     else {
+        //         // var services = []
+        //         // result.forEach(function(item) {
+                    
+        //         //     services.push(item)
+        //         // });
+        //     manager(["MakeQuery", result]);
+        //     }
+        // },
+
+        "MakeQuery" : function(result) {
+          // var services = services[0]
+          BEPGquery.getBEPG(services, expectedResult, function() { manager(["EndTest"]);});
+        },
+
+        "EndTest" : function() {
+            Utilities.print("\nExecution of test finished!!");
+            Utilities.printTestResult();
+            setTimeout(function(){ jbiz.exit(); }, 1000);
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>

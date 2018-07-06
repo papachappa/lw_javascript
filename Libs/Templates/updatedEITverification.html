@@ -1,0 +1,447 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+    body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+
+//TEST SETTINGS
+  var testName = "Verification of EIT p/f update";
+
+  /* Full name of the service list under test.
+   * Failure will be returned if the specified list does not exist.
+   * If name is "" or DO_NOT_CHANGE/DO_NOT_CHECK, then overall list will
+   * be checked.
+   */
+  var serviceList = "Ziggo";
+
+  /* Vector of fields should be present and verified in result.
+   * Default value:
+   * fields = [SL_Fields.SERVICE_NAME, SL_Fields.CHANNEL_NUMBER, SL_Fields.SID,
+   *           SL_Fields.TSID, SL_Fields.ONID, SL_Fields.MEDIA_TYPE,
+   *           SL_Fields.SERVICE_VISIBLE, SL_Fields.SERVICE_SELECTABLE],
+   */
+  var fields = [SL_Fields.SERVICE_NAME, SL_Fields.CHANNEL_NUMBER,
+                SL_Fields.SID, SL_Fields.TSID, SL_Fields.ONID,
+                SL_Fields.PRESENT_EVENT_NAME, SL_Fields.FOLLOWING_EVENT_NAME,
+                SL_Fields.MEDIA_TYPE];
+
+  /* Filters for service list request
+   * All keys in JS are interpreted as strings, therefore it's necessary
+   * to add elements in index notation.
+   * NOTE: As far as EIT p/f is updated in limits of the currently visible
+   * services, add media type filter to get all services having EIT p/f
+   * displayed.
+   * Example:
+   * var filters = {};
+   * filters[SL_Fields.MEDIA_TYPE] = MediaType.TV;
+   */
+  var filters = {};
+  filters[SL_Fields.MEDIA_TYPE] = MediaType.TV;
+
+  /* Fields that will be used for unique service identification.
+   * Default value:
+   * hash = [SL_Fields.SID, SL_Fields.TSID, SL_Fields.ONID]
+   */
+  var hash = DO_NOT_CHANGE;
+
+  // Time of EIT update
+  var time = 1284553442;
+
+  // Expected result
+  // Before time of interest
+  var expectedResultBefore = [
+      [ "Nederland 1 HD", "1", "201", "29", "1000", "NOS Journaal", "NOS Journaal", "4" ],
+      [ "Nederland 2 HD", "2", "202", "29", "1000", "Politie te paard (MAX)", "Dekselse dames (MAX)", "4" ],
+      [ "Nederland 3 HD", "3", "203", "26", "1000", "Tupu (TROS)", "De Smurfen (VARA)","4" ],
+      [ "RTL 4", "4", "10004", "10", "1000", "Herman den Blijker: Hermans Kookeiland", "Oprah Winfrey show", "4" ],
+      [ "RTL 5", "5", "11005", "11", "1000", "Best of shopping", "Tel sell", "4" ],
+      [ "SBS 6", "6", "11004", "11", "1000", "Popstars", "Still standing", "4" ],
+      [ "RTL 7", "7", "11006", "11", "1000", "RTL Z Nieuws", "The A-Team", "4" ],
+      [ "Veronica/Disney XD", "8", "11001", "11", "1000", "Film: Heksje Lilly", "Zack & Cody", "4" ],
+      [ "Net 5", "9", "9", "3", "1000", "Medisch centrum", "Ready steady cook", "4" ],
+      [ "RTL 8", "10", "15010", "15", "1000", "Tel sell", "Fabeltjeskrant", "4" ],
+      [ "Ziggo TV", "11", "20606", "206", "1000", "Ziggo infokanaal", "", "4" ],
+      [ "Preview TV", "12", "198", "29", "1000", "Previews Interactieve TV", "", "4" ],
+      [ "Etalagekanaal", "13", "60", "14", "1000", "Star Trek: Enterprise", "Star Trek: Enterprise", "4" ],
+      [ "Zenderoverzicht", "14", "12", "4", "1000", "Zenderoverzicht digitale televisie", "", "4" ],
+      [ "13TH STREET", "15", "183", "13", "1000", "Perry Mason: The Case of the Shooting Star", "Miss Marple", "4" ],
+      [ "Discovery Channel", "16", "4008", "4", "1000", "Smash lab: Unbreakable car", "American loggers: Hell on the road", "4" ],
+      [ "National Geographic Channel", "17", "4009", "4", "1000", "America's hardest prisons: Young and bad", "Air crash investigation: Hanging by a thread", "4" ],
+      [ "Nickelodeon/Comedy Central", "18", "16", "6", "1000", "True Jackson", "Invisible network of kids", "4" ],
+      [ "Eurosport", "19", "17", "6", "1000", "Voetbal: WK onder 17 jaar", "Champions club", "4" ],
+      [ "Animal Planet", "20", "18", "6", "1000", "RSPCA: Have you got what it takes?", "Escape to Chimp Eden: The code of Jao", "4" ],
+      [ "MTV", "21", "19", "6", "1000", "Brand new chart", "Made", "4" ],
+      [ "TMF", "22", "20", "6", "1000", "Top 25 meest bekeken streams op tmf.nl", "... serveert", "4" ],
+      [ "CNN International", "23", "21", "206", "1000", "World report", "World business today", "4" ],
+      [ "Het Gesprek", "24", "26001", "26", "1000", "", "", "4" ],
+      [ "BravaNL", "25", "161", "206", "1000", "Beethoven - Pianoconcert nr. 5 -Kaiser-", "Monteverdi - L'Orfeo", "4" ],
+      [ "Family 7", "26", "180", "26", "1000", "Dag TV", "Praise", "4" ],
+      [ "Eén", "27", "20603", "206", "1000", "The Lion Man", "Thuis", "4" ],
+      [ "Ketnet/Canvas", "28", "20604", "206", "1000", "Die Pfefferkörner", "De dansbende", "4" ],
+      [ "BBC 1", "29", "27003", "27", "1000", "BBC News", "Regionaal nieuws en weerbericht", "4" ],
+      [ "BBC 2", "30", "27004", "27", "1000", "See hear", "Animal park", "4" ],
+      [ "BBC 3", "31", "27001", "27", "1000", "uitzending begint om 20:00", "Great TV Mistakes", "4" ],
+      [ "BBC 4", "32", "27002", "27", "1000", "uitzending begint om 20:00", "World News Today", "4" ],
+      [ "BBC Entertainment", "33", "27005", "27", "1000", "Last of the Summer Wine", "Innocent", "4" ],
+      [ "Nederland 1 HD", "34", "261", "29", "1000", "NOS Journaal", "NOS Journaal", "4" ],
+      [ "Nederland 2 HD", "35", "262", "29", "1000", "Politie te paard (MAX)", "Dekselse dames (MAX)", "4" ],
+      [ "Nederland 3 HD", "36", "263", "26", "1000", "Tupu (TROS)", "De Smurfen (VARA)", "4" ],
+      [ "SBS 6 HD", "37", "206", "26", "1000", "Popstars", "Still standing", "4" ],
+      [ "Veronica HD/Disney XD", "38", "208", "25", "1000", "Film: Heksje Lilly", "Zack & Cody", "4" ],
+      [ "Net 5 HD", "39", "209", "25", "1000", "Medisch centrum", "Ready steady cook", "4" ],
+      [ "Discovery HD Showcase", "40", "29", "18", "1000", "100 greatest discoveries: Genetics", "Fantastic festivals of the world: Carnival - US Virgin Islands", "4" ],
+      [ "National Geographic Channel HD", "41", "15001", "15", "1000", "Salvage code red: Typhoon showdown", "Monkey thieves: Home hunters", "4" ],
+      [ "HISTORY HD", "42", "24001", "24", "1000", "How the earth was made: Vesuvius", "Life after people: Sin City meltdown", "4" ],
+      [ "Eurosport HD", "43", "167", "3", "1000", "Voetbal: WK onder 17 jaar", "Champions club", "4" ],
+      [ "Film1.1", "44", "8010", "8", "1000", "The Boat That Rocked", "New in Town", "4" ],
+      [ "Film1.2", "45", "8008", "8", "1000", "Ice Age 3 (NL)", "Transsiberian", "4" ],
+      [ "Film1.3", "46", "8009", "8", "1000", "Oorlogswinter", "I Love Trouble", "4" ],
+      [ "Film1+1", "47", "8017", "8", "1000", "The Boat That Rocked", "New in Town", "4" ],
+      [ "Film1 Action", "48", "178", "3", "1000", "Clockers", "The Keeper", "4" ],
+      [ "Film1 HD", "49", "22001", "22", "1000", "The Boat That Rocked", "New in Town", "4" ],
+      [ "MGM Movie Channel", "50", "14008", "14", "1000", "Invasion of the body snatchers", "Class", "4" ],
+      [ "Hallmark Channel", "51", "14001", "14", "1000", "Second Chances", "Blind Injustice", "4" ],
+      [ "TCM", "52", "14007", "14", "1000", "Penelope", "Living free", "4" ],
+      [ "Misdaadnet", "53", "172", "23", "1000", "Midsomer Murders", "Spangen", "4" ],
+      [ "Syfy Universal", "54", "184", "16", "1000", "Star Trek: Enterprise", "Star Trek: Enterprise", "4" ],
+      [ "Humor TV 24", "55", "22003", "22", "1000", "Het schnitzelparadijs (BNN)", "Intermezzo:Waardenberg & De Jong (VARA)", "4" ],
+      [ "Comedy Central Family", "56", "5001", "5", "1000", "Het zonnetje in huis", "Het zonnetje in huis", "4" ],
+      [ "101 TV", "57", "23006", "23", "1000", "Afternoon bits", "Evening bits", "4" ],
+      [ "RTL Lounge", "58", "197", "12", "1000", "Voetbalvrouwen", "Laguna beach", "4" ],
+      [ "FOXlife", "59", "196", "5", "1000", "La Femme Nikita", "Third Watch", "4" ],
+      [ "E! Entertainment", "60", "43", "22", "1000", "Kendra", "Women of the Forbes Celebrity 100", "4" ],
+      [ "Best 24", "61", "23008", "23", "1000", "Spel Zonder Grenzen (1977) (NCRV)", "Spel zonder Grenzen (1997) (TROS)", "4" ],
+      [ "Zone Reality", "62", "22004", "22", "1000", "Filth files", "Private lives: Legless people", "4" ],
+      [ "HET NIEUWE OUTTV", "63", "182", "15", "1000", "Raw", "Raw", "4" ],
+      [ "Discovery Science", "64", "4005", "4", "1000", "What's That About?", "The Gadget Show", "4" ],
+      [ "Discovery World", "65", "4004", "4", "1000", "Altered Statesmen", "Weaponology", "4" ],
+      [ "Discovery Travel & Living", "66", "4006", "4", "1000", "Flip that House", "Toddlers and Tiaras", "4" ],
+      [ "Travel Channel", "67", "4007", "4", "1000", "Think Green", "Globe Trekker", "4" ],
+      [ "Nat Geo Wild", "68", "4001", "4", "1000", "Prehistoric Predators", "Kalahari", "4" ],
+      [ "NostalgieNet", "69", "58", "25", "1000", "Maandthema: Film", "Wildschut", "4" ],
+      [ "HISTORY", "70", "57", "25", "1000", "Last Voices of World War I", "Battle 360", "4" ],
+      [ "Geschiedenis 24", "71", "23002", "23", "1000", "Want elk graf heeft z'n verhaal - Nederland", "De onbekende soldaat", "4" ],
+      [ "Holland Doc 24", "72", "23001", "23", "1000", "Tishe!", "Zembla - uitzending van 11 sept (NPS/VARA)", "4" ],
+      [ "Consumenten 24", "73", "70", "23", "1000", "Zembla (VARA)", "Weet wat je koopt (VARA)", "4" ],
+      [ "Spirit 24", "74", "103", "5", "1000", "Kijken in de ziel (RVU)", "Zij gelooft, zij niet (EO)", "4" ],
+      [ "Cultura 24", "75", "23003", "23", "1000", "Zonnestraal, drempels tussen lucht en aarde (VPRO)", "Knetterende Letteren (NPS)", "4" ],
+      [ "Cartoon Network", "76", "18001", "18", "1000", "Eliot Kid", "The Marvelous Misadventures of Flapjack", "4" ],
+      [ "Boomerang", "77", "18006", "18", "1000", "De Flintstones", "Looney tunes", "4" ],
+      [ "Nick Jr.", "78", "18003", "18", "1000", "Louie", "Roary", "4" ],
+      [ "Nick Toons", "79", "66", "16", "1000", "Edgar&Ellen", "Speed racer", "4" ],
+      [ "Nick Hits", "80", "67", "16", "1000", "Nick Hits", "Nick Hits", "4" ],
+      [ "Baby TV", "81", "68", "16", "1000", "Een fantastische wereld en meer", "Pitch and Potch Sound Machine en meer", "4" ],
+      [ "Zappelin 24 / Familie 24", "82", "7008", "7", "1000", "Houtje en touwtje (EO)", "Kleuterdocumentaire (KRO)", "4" ],
+      [ "JimJam", "83", "171", "27", "1000", "Tork", "Barney", "4" ],
+      [ "TMF Dance", "84", "14005", "14", "1000", "Non stop hits", "Non stop hits", "4" ],
+      [ "TMF NL", "85", "14004", "14", "1000", "Non stop hits", "Non stop hits", "4" ],
+      [ "MTV Brand New", "86", "14003", "14", "1000", "Brand new", "Brand new", "4" ],
+      [ "TMF Pure", "87", "74", "13", "1000", "TMF Pure", "TMF Pure", "4" ],
+      [ "SLAM!TV", "88", "195", "13", "1000", "Non stop", "Non stop", "4" ],
+      [ "VH-1", "89", "13001", "13", "1000", "VH1 Music", "Music for the Masses", "4" ],
+      [ "VH-1 Classic", "90", "13002", "13", "1000", "All Time Hits", "We Are The 80s", "4" ],
+      [ "TV Oranje", "91", "13007", "13", "1000", "TV Oranje non stop", "TV Oranje non stop", "4" ],
+      [ "Sterren 24", "92", "13009", "13", "1000", "Tim op tilt!", "Sterren Nonstop (TROS)", "4" ],
+      [ "Mezzo", "93", "80", "13", "1000", "Tsjaikovsky: Le lac des cygnes - choreografie Heinz Spoerli", "Nathalie Natiembé live at the Sakifo Festival 2010", "4" ],
+      [ "Sport1", "94", "6001", "6", "1000", "1899 Hoffenheim - Schalke '04", "Bayern Munchen - Werder Bremen", "4" ],
+      [ "Sport1.2", "95", "6002", "6", "1000", "Engelse Premier League", "Studio Europa: De Hoogtepunten", "4" ],
+      [ "Sport1 Extra", "96", "9001", "9", "1000", "Sport1 Informatie", "Champions League: AC Milan - Auxerre", "4" ],
+      [ "Sport1 Extra", "97", "9002", "9", "1000", "Sport1 Informatie", "Champions League: Arsenal - Braga", "4" ],
+      [ "Sport1 Extra", "98", "9003", "9", "1000", "Sport1 Informatie", "Champions League: Zilina - Chelsea", "4" ],
+      [ "Sport1 Extra", "99", "9004", "9", "1000", "Sport1 Informatie", "Champions League: Marseille - Spartak Moskou", "4" ],
+      [ "Sport1 HD", "100", "16002", "16", "1000", "Everton - Manchester United", "Birmingham City - Liverpool", "4" ],
+      [ "Eurosport 2", "101", "5002", "5", "1000", "Cricket", "Autosport", "4" ],
+      [ "ESPN America", "102", "5006", "5", "1000", "MLB: NY Yankees at Tampa Bay", "MLB: Boston at Atlanta", "4" ],
+      [ "Motors TV", "103", "5004", "5", "1000", "AMA Motocross", "AMA Motocross", "4" ],
+      [ "Car Channel", "104", "94", "5", "1000", "ADAC Zurich 24h-race 2010", "Red Bull Rookies Mugello", "4" ],
+      [ "ESPN Classic Sports", "105", "5007", "5", "1000", "Geen info beschikbaar", "FIFA World Cup Classic Matches", "4" ],
+      [ "Eredivisie Live 1 HD", "106", "211", "19", "1000", "ADO Den Haag - De Graafschap", "De 18", "4" ],
+      [ "Eredivisie Live 2", "107", "175", "24", "1000", "Tekst TV", "Tekst TV", "4" ],
+      [ "Eredivisie Live 3", "108", "176", "24", "1000", "Tekst TV", "Tekst TV", "4" ],
+      [ "Eredivisie Live 4", "109", "177", "24", "1000", "Tekst TV", "Tekst TV", "4" ],
+      [ "BBC World News", "110", "12002", "12", "1000", "GMT with George Alagiah", "World business report", "4" ],
+      [ "Euronews", "111", "12010", "12", "1000", "Lunchtime News", "News and Lifestyle", "4" ],
+      [ "Politiek 24", "112", "12005", "12", "1000", "Politiek 24 - 24 uur Haagse politiek", "Politiek 24 - 24 uur Haagse politiek", "4" ],
+      [ "Journaal 24", "113", "12007", "12", "1000", "NOS Journaal/NOS Verder Vandaag", "NOS Journaal/Actueel", "4" ],
+      [ "CNBC Europe", "114", "12001", "12", "1000", "US CNBC Squawk Box", "Squawk on the Street", "4" ],
+      [ "Weer en Verkeer", "115", "2007", "2", "1000", "Weer & Verkeer", "Weer & Verkeer", "4" ],
+      [ "Aljazeera International", "116", "2006", "2", "1000", "News live Doha", "People and power", "4" ],
+      [ "ARD", "117", "1001", "1", "1000", "Rote Rosen", "Tagesschau", "4" ],
+      [ "ZDF", "118", "27006", "27", "1000", "Die Küchenschlacht", "heute", "4" ],
+      [ "NDR", "119", "1005", "1", "1000", "Bilderbuch Deutschland", "NDR aktuell", "4" ],
+      [ "WDR", "120", "1009", "1", "1000", "markt", "Planet Wissen", "4" ],
+      [ "SWR Fernsehen", "121", "1010", "1", "1000", "Der Ruf der Berge", "Planet Wissen", "4" ],
+      [ "RTL Television", "122", "1006", "1", "1000", "Mitten im Leben!", "Verdachtsfälle", "4" ],
+      [ "Sat. 1", "123", "1008", "1", "1000", "Zwei bei Kallwass", "Richterin Barbara Salesch", "4" ],
+      [ "Arte", "124", "20707", "207", "1000", "Faszinierende Wildnis", "Conte d'été", "4" ],
+      [ "TV5 Monde", "125", "19005", "19", "1000", "Impasse des deux anges", "Soudain ses mains", "4" ],
+      [ "France 2", "126", "117", "19", "1000", "Toute une histoire", "Comment ça va bien !", "4" ],
+      [ "Rai Uno", "127", "19003", "19", "1000", "Don Matteo", "Capri", "4" ],
+      [ "TVE", "128", "19002", "19", "1000", "El hombre y la tierra (Fauna iberica)", "Corazón", "4" ],
+      [ "TRT Int.", "129", "19008", "19", "1000", "Masa", "Gümüs hilal", "4" ],
+      [ "Euro D", "130", "121", "12", "1000", "Yaprak Dökümü", "Arka Sokaklar", "4" ],
+      [ "ATV Avrupa", "131", "122", "12", "1000", "Bitmeyen Şarkı", "Esra Erol'da Evlen Benimle", "4" ],
+      [ "TGRT EU", "132", "123", "14", "1000", "Yurt Gündemi", "Doğrudan Satış", "4" ],
+      [ "Samanyola Avrupa", "133", "124", "14", "1000", "Bosanmak istemiyorum", "Hayat dersi", "4" ],
+      [ "Euro Star", "134", "125", "7", "1000", "Sihirli Annem", "Çarkıfelek", "4" ],
+      [ "Show TV", "135", "126", "7", "1000", "Doktorlar", "Yemekteyiz", "4" ],
+      [ "Habertürk", "136", "163", "27", "1000", "Habertürk Gündem", "Haber Bülteni", "4" ],
+      [ "DreamTürk", "137", "131", "6", "1000", "", "", "4" ],
+      [ "Yesilcam", "138", "132", "18", "1000", "", "", "4" ],
+      [ "LIG TV", "139", "127", "206", "1000", "Futbol Gündemi", "Haber", "4" ],
+      [ "Türk Max", "140", "128", "206", "1000", "Yanık Koza", "Fikret Bey", "4" ],
+      [ "Zee TV", "141", "7005", "7", "1000", "Yahaan Mein Ghar Ghar Kheli", "Hamari Betiyon Ka Vivah", "4" ],
+      [ "SET Asia", "142", "7006", "7", "1000", "Bairaag", "Maahi Way", "4" ],
+      [ "Zee Cinema", "143", "164", "7", "1000", "Andaz Apna Apna", "Zee Multiplex", "4" ],
+      [ "MAX", "144", "162", "7", "1000", "Ram Balram", "Teleshopping and Super Gaane", "4" ],
+      [ "Phoenix CNE", "145", "134", "7", "1000", "Comrades in Force", "The Asian Journal", "4" ],
+      [ "Phoenix InfoNews", "146", "165", "7", "1000", "Geen informatie", "", "4" ],
+      [ "PassieTV/Dusk!", "147", "139", "9", "1000", "Erotic experience 1 scene05", "Phone-order hooker", "4" ],
+      [ "Erotiek Pakket", "148", "23004", "23", "1000", "Informatie Erotiek pakket", "", "4" ],
+      [ "Private Spice", "149", "7002", "7", "1000", "Barely 18: Karla St James", "Not Bewitched XXX", "4" ],
+      [ "PassieXXX", "150", "199", "9", "1000", "Magic Graffiti", "Polder Tieners scene56", "4" ],
+      [ "Dusk!", "151", "7003", "7", "1000", "The Kiss Scene 5", "The Model", "4" ],
+      [ "X-MO", "152", "181", "15", "1000", "Aqua Club", "Bound Shaved and Fucked", "4" ],
+      [ "Nederland 1", "153", "10001", "10", "1000", "NOS Journaal", "NOS Journaal", "4" ],
+      [ "Nederland 2", "154", "10002", "10", "1000", "Politie te paard (MAX)", "Dekselse dames (MAX)", "4" ],
+      [ "Nederland 3", "155", "10003", "10", "1000", "Tupu (TROS)", "De Smurfen (VARA)", "4" ],
+      [ "Eredivisie Live 1", "156", "174", "24", "1000", "ADO Den Haag - De Graafschap", "De 18", "4" ],
+      [ "Lokale Omroep", "157", "500", "2700", "1000", "Lokale omroep", "Lokale omroep", "4" ],
+      [ "Omroep Zeeland", "158", "2008", "2", "1000", "Herhalingen", "Zeeland nu", "4" ],
+      [ "TV Flevoland", "159", "20702", "207", "1000", "D-TV", "Weer", "4" ],
+      [ "TV Drenthe", "160", "20705", "207", "1000", "Dag TV", "Drenthe Nu", "4" ],
+      [ "TV Noord", "161", "20601", "206", "1000", "Tekst TV", "Noord Nieuws", "4" ],
+      [ "Omrop Fryslân", "162", "20602", "206", "1000", "Deitelevyzje", "Hjoed 17.00 oere", "4" ],
+      [ "TV Oost", "163", "20706", "207", "1000", "DagTV - streek/religie", "DagTV - mensen", "4" ],
+      [ "L1 Limburg", "164", "20703", "207", "1000", "Dagcarrousel", "Kinjerkraom", "4" ],
+      [ "TV Utrecht", "165", "2003", "2", "1000", "U Vandaag", "Bureau Hengeveld", "4" ],
+      [ "TV Gelderland", "166", "20701", "207", "1000", "Kijkradio", "S-TV", "4" ],
+      [ "Omroep Brabant TV", "167", "20704", "207", "1000", "Leon in Afrika", "Brabant Nieuws Middag", "4" ],
+      [ "AT 5", "168", "2002", "2", "1000", "Basta", "Amsterdam today", "4" ],
+      [ "TV Noord-Holland", "169", "2001", "2", "1000", "", "", "4" ],
+      [ "TV Rijnmond", "170", "2005", "2", "1000", "Rijnmond Nieuws", "Het Weer", "4" ],
+      [ "TV West", "171", "2004", "2", "1000", "TV West Nieuws", "Team West", "4" ],
+      [ "GoedTV", "172", "29001", "29", "1000", "Warzone: India", "Wereld van Doen - Brazilië", "4" ]
+];
+
+  // After time of interest
+  var expectedResultAfter = [
+      [ "Nederland 1 HD", "1", "201", "29", "1000", "NOS Journaal", "NOS Journaal", "4" ],
+      [ "Nederland 2 HD", "2", "202", "29", "1000", "Politie te paard (MAX)", "Dekselse dames (MAX)", "4" ],
+      [ "Nederland 3 HD", "3", "203", "26", "1000", "De Smurfen (VARA)", "Mega Mindy (TROS)", "4" ],
+      [ "RTL 4", "4", "10004", "10", "1000", "Herman den Blijker: Hermans Kookeiland", "Oprah Winfrey show", "4" ],
+      [ "RTL 5", "5", "11005", "11", "1000", "Best of shopping", "Tel sell", "4" ],
+      [ "SBS 6", "6", "11004", "11", "1000", "Popstars", "Still standing", "4" ],
+      [ "RTL 7", "7", "11006", "11", "1000", "RTL Z Nieuws", "The A-Team", "4" ],
+      [ "Veronica/Disney XD", "8", "11001", "11", "1000", "Film: Heksje Lilly", "Zack & Cody", "4" ],
+      [ "Net 5", "9", "9", "3", "1000", "Ready steady cook", "Disney feest", "4" ],
+      [ "RTL 8", "10", "15010", "15", "1000", "Tel sell", "Fabeltjeskrant", "4" ],
+      [ "Ziggo TV", "11", "20606", "206", "1000", "Ziggo infokanaal", "", "4" ],
+      [ "Preview TV", "12", "198", "29", "1000", "Previews Interactieve TV", "", "4" ],
+      [ "Etalagekanaal", "13", "60", "14", "1000", "Star Trek: Enterprise", "Star Trek: Enterprise", "4" ],
+      [ "Zenderoverzicht", "14", "12", "4", "1000", "Zenderoverzicht digitale televisie", "", "4" ],
+      [ "13TH STREET", "15", "183", "13", "1000", "Perry Mason: The Case of the Shooting Star", "Miss Marple", "4" ],
+      [ "Discovery Channel", "16", "4008", "4", "1000", "Smash lab: Unbreakable car", "American loggers: Hell on the road", "4" ],
+      [ "National Geographic Channel", "17", "4009", "4", "1000", "America's hardest prisons: Young and bad", "Air crash investigation: Hanging by a thread", "4" ],
+      [ "Nickelodeon/Comedy Central", "18", "16", "6", "1000", "True Jackson", "Invisible network of kids", "4" ],
+      [ "Eurosport", "19", "17", "6", "1000", "Voetbal: WK onder 17 jaar", "Champions club", "4" ],
+      [ "Animal Planet", "20", "18", "6", "1000", "RSPCA: Have you got what it takes?", "Escape to Chimp Eden: The code of Jao", "4" ],
+      [ "MTV", "21", "19", "6", "1000", "Brand new chart", "Made", "4" ],
+      [ "TMF", "22", "20", "6", "1000", "Top 25 meest bekeken streams op tmf.nl", "... serveert", "4" ],
+      [ "CNN International", "23", "21", "206", "1000", "World report", "World business today", "4" ],
+      [ "Het Gesprek", "24", "26001", "26", "1000", "", "", "4" ],
+      [ "BravaNL", "25", "161", "206", "1000", "Beethoven - Pianoconcert nr. 5 -Kaiser-", "Monteverdi - L'Orfeo", "4" ],
+      [ "Family 7", "26", "180", "26", "1000", "Dag TV", "Praise", "4" ],
+      [ "Eén", "27", "20603", "206", "1000", "Thuis", "Sold", "4" ],
+      [ "Ketnet/Canvas", "28", "20604", "206", "1000","De dansbende", "Disney's Aladdin", "4" ],
+      [ "BBC 1", "29", "27003", "27", "1000", "BBC News", "Regionaal nieuws en weerbericht", "4" ],
+      [ "BBC 2", "30", "27004", "27", "1000", "See hear", "Animal park", "4" ],
+      [ "BBC 3", "31", "27001", "27", "1000", "uitzending begint om 20:00", "Great TV Mistakes", "4" ],
+      [ "BBC 4", "32", "27002", "27", "1000", "uitzending begint om 20:00", "World News Today", "4" ],
+      [ "BBC Entertainment", "33", "27005", "27", "1000", "Last of the Summer Wine", "Innocent", "4" ],
+      [ "Nederland 1 HD", "34", "261", "29", "1000", "NOS Journaal", "NOS Journaal", "4" ],
+      [ "Nederland 2 HD", "35", "262", "29", "1000", "Politie te paard (MAX)", "Dekselse dames (MAX)", "4" ],
+      [ "Nederland 3 HD", "36", "263", "26", "1000", "De Smurfen (VARA)", "Mega Mindy (TROS)", "4" ],
+      [ "SBS 6 HD", "37", "206", "26", "1000", "Popstars", "Still standing", "4" ],
+      [ "Veronica HD/Disney XD", "38", "208", "25", "1000", "Film: Heksje Lilly", "Zack & Cody", "4" ],
+      [ "Net 5 HD", "39", "209", "25", "1000", "Ready steady cook", "Disney feest", "4" ],
+      [ "Discovery HD Showcase", "40", "29", "18", "1000", "100 greatest discoveries: Genetics", "Fantastic festivals of the world: Carnival - US Virgin Islands", "4" ],
+      [ "National Geographic Channel HD", "41", "15001", "15", "1000", "Salvage code red: Typhoon showdown", "Monkey thieves: Home hunters", "4" ],
+      [ "HISTORY HD", "42", "24001", "24", "1000", "How the earth was made: Vesuvius", "Life after people: Sin City meltdown", "4" ],
+      [ "Eurosport HD", "43", "167", "3", "1000", "Voetbal: WK onder 17 jaar", "Champions club", "4" ],
+      [ "Film1.1", "44", "8010", "8", "1000", "The Boat That Rocked", "New in Town", "4" ],
+      [ "Film1.2", "45", "8008", "8", "1000", "Ice Age 3 (NL)", "Transsiberian", "4" ],
+      [ "Film1.3", "46", "8009", "8", "1000", "Oorlogswinter", "I Love Trouble", "4" ],
+      [ "Film1+1", "47", "8017", "8", "1000", "The Boat That Rocked", "New in Town", "4" ],
+      [ "Film1 Action", "48", "178", "3", "1000", "Clockers", "The Keeper", "4" ],
+      [ "Film1 HD", "49", "22001", "22", "1000", "The Boat That Rocked", "New in Town", "4" ],
+      [ "MGM Movie Channel", "50", "14008", "14", "1000", "Invasion of the body snatchers", "Class", "4" ],
+      [ "Hallmark Channel", "51", "14001", "14", "1000", "Second Chances", "Blind Injustice", "4" ],
+      [ "TCM", "52", "14007", "14", "1000", "Penelope", "Living free", "4" ],
+      [ "Misdaadnet", "53", "172", "23", "1000", "Midsomer Murders", "Spangen", "4" ],
+      [ "Syfy Universal", "54", "184", "16", "1000", "Star Trek: Enterprise", "Star Trek: Enterprise", "4" ],
+      [ "Humor TV 24", "55", "22003", "22", "1000", "Het schnitzelparadijs (BNN)", "Intermezzo:Waardenberg & De Jong (VARA)", "4" ],
+      [ "Comedy Central Family", "56", "5001", "5", "1000", "Het zonnetje in huis", "Het zonnetje in huis", "4" ],
+      [ "101 TV", "57", "23006", "23", "1000", "Afternoon bits", "Evening bits", "4" ],
+      [ "RTL Lounge", "58", "197", "12", "1000", "Voetbalvrouwen", "Laguna beach", "4" ],
+      [ "FOXlife", "59", "196", "5", "1000", "Third Watch", "Brothers and Sisters", "4" ],
+      [ "E! Entertainment", "60", "43", "22", "1000", "Women of the Forbes Celebrity 100", "Kourtney & Khloe Take Miami", "4" ],
+      [ "Best 24", "61", "23008", "23", "1000", "Spel Zonder Grenzen (1977) (NCRV)", "Spel zonder Grenzen (1997) (TROS)", "4" ],
+      [ "Zone Reality", "62", "22004", "22", "1000", "Filth files", "Private lives: Legless people", "4" ],
+      [ "HET NIEUWE OUTTV", "63", "182", "15", "1000", "Raw", "Raw", "4" ],
+      [ "Discovery Science", "64", "4005", "4", "1000", "The Gadget Show", "Sci-Fi Saved My Life", "4" ],
+      [ "Discovery World", "65", "4004", "4", "1000", "Altered Statesmen", "Weaponology", "4" ],
+      [ "Discovery Travel & Living", "66", "4006", "4", "1000", "Flip that House", "Toddlers and Tiaras", "4" ],
+      [ "Travel Channel", "67", "4007", "4", "1000", "Think Green", "Globe Trekker", "4" ],
+      [ "Nat Geo Wild", "68", "4001", "4", "1000", "Prehistoric Predators", "Kalahari", "4" ],
+      [ "NostalgieNet", "69", "58", "25", "1000", "Maandthema: Film", "Wildschut", "4" ],
+      [ "HISTORY", "70", "57", "25", "1000", "Last Voices of World War I", "Battle 360", "4" ],
+      [ "Geschiedenis 24", "71", "23002", "23", "1000", "Want elk graf heeft z'n verhaal - Nederland", "De onbekende soldaat", "4" ],
+      [ "Holland Doc 24", "72", "23001", "23", "1000", "Tishe!", "Zembla - uitzending van 11 sept (NPS/VARA)", "4" ],
+      [ "Consumenten 24", "73", "70", "23", "1000", "Zembla (VARA)", "Weet wat je koopt (VARA)", "4" ],
+      [ "Spirit 24", "74", "103", "5", "1000", "Kijken in de ziel (RVU)", "Zij gelooft, zij niet (EO)", "4" ],
+      [ "Cultura 24", "75", "23003", "23", "1000", "Zonnestraal, drempels tussen lucht en aarde (VPRO)", "Knetterende Letteren (NPS)", "4" ],
+      [ "Cartoon Network", "76", "18001", "18", "1000", "Eliot Kid", "The Marvelous Misadventures of Flapjack", "4" ],
+      [ "Boomerang", "77", "18006", "18", "1000", "De Flintstones", "Looney tunes", "4" ],
+      [ "Nick Jr.", "78", "18003", "18", "1000", "Louie", "Roary", "4" ],
+      [ "Nick Toons", "79", "66", "16", "1000", "Edgar&Ellen", "Speed racer", "4" ],
+      [ "Nick Hits", "80", "67", "16", "1000", "Nick Hits", "Nick Hits", "4" ],
+      [ "Baby TV", "81", "68", "16", "1000", "Een fantastische wereld en meer", "Pitch and Potch Sound Machine en meer", "4" ],
+      [ "Zappelin 24 / Familie 24", "82", "7008", "7", "1000", "Houtje en touwtje (EO)", "Kleuterdocumentaire (KRO)", "4" ],
+      [ "JimJam", "83", "171", "27", "1000", "Tork", "Barney", "4" ],
+      [ "TMF Dance", "84", "14005", "14", "1000", "Non stop hits", "Non stop hits", "4" ],
+      [ "TMF NL", "85", "14004", "14", "1000", "Non stop hits", "Non stop hits", "4" ],
+      [ "MTV Brand New", "86", "14003", "14", "1000", "Brand new", "Brand new", "4" ],
+      [ "TMF Pure", "87", "74", "13", "1000", "TMF Pure", "TMF Pure", "4" ],
+      [ "SLAM!TV", "88", "195", "13", "1000", "Non stop", "Non stop", "4" ],
+      [ "VH-1", "89", "13001", "13", "1000", "VH1 Music", "Music for the Masses", "4" ],
+      [ "VH-1 Classic", "90", "13002", "13", "1000", "All Time Hits", "We Are The 80s", "4" ],
+      [ "TV Oranje", "91", "13007", "13", "1000", "TV Oranje non stop", "TV Oranje non stop", "4" ],
+      [ "Sterren 24", "92", "13009", "13", "1000", "Tim op tilt!", "Sterren Nonstop (TROS)", "4" ],
+      [ "Mezzo", "93", "80", "13", "1000", "Tsjaikovsky: Le lac des cygnes - choreografie Heinz Spoerli", "Nathalie Natiembé live at the Sakifo Festival 2010", "4" ],
+      [ "Sport1", "94", "6001", "6", "1000", "1899 Hoffenheim - Schalke '04", "Bayern Munchen - Werder Bremen", "4" ],
+      [ "Sport1.2", "95", "6002", "6", "1000", "Engelse Premier League", "Studio Europa: De Hoogtepunten", "4" ],
+      [ "Sport1 Extra", "96", "9001", "9", "1000", "Sport1 Informatie", "Champions League: AC Milan - Auxerre", "4" ],
+      [ "Sport1 Extra", "97", "9002", "9", "1000", "Sport1 Informatie", "Champions League: Arsenal - Braga", "4" ],
+      [ "Sport1 Extra", "98", "9003", "9", "1000", "Sport1 Informatie", "Champions League: Zilina - Chelsea", "4" ],
+      [ "Sport1 Extra", "99", "9004", "9", "1000", "Sport1 Informatie", "Champions League: Marseille - Spartak Moskou", "4" ],
+      [ "Sport1 HD", "100", "16002", "16", "1000", "Everton - Manchester United", "Birmingham City - Liverpool", "4" ],
+      [ "Eurosport 2", "101", "5002", "5", "1000", "Cricket", "Autosport", "4" ],
+      [ "ESPN America", "102", "5006", "5", "1000", "MLB: NY Yankees at Tampa Bay", "MLB: Boston at Atlanta", "4" ],
+      [ "Motors TV", "103", "5004", "5", "1000", "AMA Motocross", "AMA Motocross", "4" ],
+      [ "Car Channel", "104", "94", "5", "1000", "ADAC Zurich 24h-race 2010", "Red Bull Rookies Mugello", "4" ],
+      [ "ESPN Classic Sports", "105", "5007", "5", "1000", "Geen info beschikbaar", "FIFA World Cup Classic Matches", "4" ],
+      [ "Eredivisie Live 1 HD", "106", "211", "19", "1000", "ADO Den Haag - De Graafschap", "De 18", "4" ],
+      [ "Eredivisie Live 2", "107", "175", "24", "1000", "Tekst TV", "Tekst TV", "4" ],
+      [ "Eredivisie Live 3", "108", "176", "24", "1000", "Tekst TV", "Tekst TV", "4" ],
+      [ "Eredivisie Live 4", "109", "177", "24", "1000", "Tekst TV", "Tekst TV", "4" ],
+      [ "BBC World News", "110", "12002", "12", "1000", "GMT with George Alagiah", "World business report", "4" ],
+      [ "Euronews", "111", "12010", "12", "1000", "Lunchtime News", "News and Lifestyle", "4" ],
+      [ "Politiek 24", "112", "12005", "12", "1000", "Politiek 24 - 24 uur Haagse politiek", "Politiek 24 - 24 uur Haagse politiek", "4" ],
+      [ "Journaal 24", "113", "12007", "12", "1000", "NOS Journaal/NOS Verder Vandaag", "NOS Journaal/Actueel", "4" ],
+      [ "CNBC Europe", "114", "12001", "12", "1000", "US CNBC Squawk Box", "Squawk on the Street", "4" ],
+      [ "Weer en Verkeer", "115", "2007", "2", "1000", "Weer & Verkeer", "Weer & Verkeer", "4" ],
+      [ "Aljazeera International", "116", "2006", "2", "1000", "News live Doha", "People and power", "4" ],
+      [ "ARD", "117", "1001", "1", "1000", "Rote Rosen", "Tagesschau", "4" ],
+      [ "ZDF", "118", "27006", "27", "1000", "Die Küchenschlacht", "heute", "4" ],
+      [ "NDR", "119", "1005", "1", "1000", "Bilderbuch Deutschland", "NDR aktuell", "4" ],
+      [ "WDR", "120", "1009", "1", "1000", "markt", "Planet Wissen", "4" ],
+      [ "SWR Fernsehen", "121", "1010", "1", "1000", "Der Ruf der Berge", "Planet Wissen", "4" ],
+      [ "RTL Television", "122", "1006", "1", "1000", "Mitten im Leben!", "Verdachtsfälle", "4" ],
+      [ "Sat. 1", "123", "1008", "1", "1000", "Zwei bei Kallwass", "Richterin Barbara Salesch", "4" ],
+      [ "Arte", "124", "20707", "207", "1000", "Faszinierende Wildnis", "Conte d'été", "4" ],
+      [ "TV5 Monde", "125", "19005", "19", "1000", "Impasse des deux anges", "Soudain ses mains", "4" ],
+      [ "France 2", "126", "117", "19", "1000", "Toute une histoire", "Comment ça va bien !", "4" ],
+      [ "Rai Uno", "127", "19003", "19", "1000", "Don Matteo", "Capri", "4" ],
+      [ "TVE", "128", "19002", "19", "1000", "El hombre y la tierra (Fauna iberica)", "Corazón", "4" ],
+      [ "TRT Int.", "129", "19008", "19", "1000", "Masa", "Gümüs hilal", "4" ],
+      [ "Euro D", "130", "121", "12", "1000", "Yaprak Dökümü", "Arka Sokaklar", "4" ],
+      [ "ATV Avrupa", "131", "122", "12", "1000", "Bitmeyen Şarkı", "Esra Erol'da Evlen Benimle", "4" ],
+      [ "TGRT EU", "132", "123", "14", "1000", "Yurt Gündemi", "Doğrudan Satış", "4" ],
+      [ "Samanyola Avrupa", "133", "124", "14", "1000", "Bosanmak istemiyorum", "Hayat dersi", "4" ],
+      [ "Euro Star", "134", "125", "7", "1000", "Sihirli Annem", "Çarkıfelek", "4" ],
+      [ "Show TV", "135", "126", "7", "1000", "Doktorlar", "Yemekteyiz", "4" ],
+      [ "Habertürk", "136", "163", "27", "1000", "Habertürk Gündem", "Haber Bülteni", "4" ],
+      [ "DreamTürk", "137", "131", "6", "1000", "", "", "4" ],
+      [ "Yesilcam", "138", "132", "18", "1000", "", "", "4" ],
+      [ "LIG TV", "139", "127", "206", "1000", "Futbol Gündemi", "Haber", "4" ],
+      [ "Türk Max", "140", "128", "206", "1000", "Yanık Koza", "Fikret Bey", "4" ],
+      [ "Zee TV", "141", "7005", "7", "1000", "Yahaan Mein Ghar Ghar Kheli", "Hamari Betiyon Ka Vivah", "4" ],
+      [ "SET Asia", "142", "7006", "7", "1000", "Bairaag", "Maahi Way", "4" ],
+      [ "Zee Cinema", "143", "164", "7", "1000", "Andaz Apna Apna", "Zee Multiplex", "4" ],
+      [ "MAX", "144", "162", "7", "1000", "Ram Balram", "Teleshopping and Super Gaane", "4" ],
+      [ "Phoenix CNE", "145", "134", "7", "1000", "Comrades in Force", "The Asian Journal", "4" ],
+      [ "Phoenix InfoNews", "146", "165", "7", "1000", "Geen informatie", "", "4" ],
+      [ "PassieTV/Dusk!", "147", "139", "9", "1000", "Erotic experience 1 scene05", "Phone-order hooker", "4" ],
+      [ "Erotiek Pakket", "148", "23004", "23", "1000", "Informatie Erotiek pakket", "", "4" ],
+      [ "Private Spice", "149", "7002", "7", "1000", "Barely 18: Karla St James", "Not Bewitched XXX", "4" ],
+      [ "PassieXXX", "150", "199", "9", "1000", "Magic Graffiti", "Polder Tieners scene56", "4" ],
+      [ "Dusk!", "151", "7003", "7", "1000", "The Kiss Scene 5", "The Model", "4" ],
+      [ "X-MO", "152", "181", "15", "1000", "Aqua Club", "Bound Shaved and Fucked", "4" ],
+      [ "Nederland 1", "153", "10001", "10", "1000", "NOS Journaal", "NOS Journaal", "4" ],
+      [ "Nederland 2", "154", "10002", "10", "1000", "Politie te paard (MAX)", "Dekselse dames (MAX)", "4" ],
+      [ "Nederland 3", "155", "10003", "10", "1000", "De Smurfen (VARA)", "Mega Mindy (TROS)", "4" ],
+      [ "Eredivisie Live 1", "156", "174", "24", "1000", "ADO Den Haag - De Graafschap", "De 18", "4" ],
+      [ "Lokale Omroep", "157", "500", "2700", "1000", "Lokale omroep", "Lokale omroep", "4" ],
+      [ "Omroep Zeeland", "158", "2008", "2", "1000", "Herhalingen", "Zeeland nu", "4" ],
+      [ "TV Flevoland", "159", "20702", "207", "1000", "D-TV", "Weer", "4" ],
+      [ "TV Drenthe", "160", "20705", "207", "1000", "Dag TV", "Drenthe Nu", "4" ],
+      [ "TV Noord", "161", "20601", "206", "1000", "Tekst TV", "Noord Nieuws", "4" ],
+      [ "Omrop Fryslân", "162", "20602", "206", "1000", "Deitelevyzje", "Hjoed 17.00 oere", "4" ],
+      [ "TV Oost", "163", "20706", "207", "1000", "DagTV - streek/religie", "DagTV - mensen", "4" ],
+      [ "L1 Limburg", "164", "20703", "207", "1000", "Dagcarrousel", "Kinjerkraom", "4" ],
+      [ "TV Utrecht", "165", "2003", "2", "1000", "U Vandaag", "Bureau Hengeveld", "4" ],
+      [ "TV Gelderland", "166", "20701", "207", "1000", "Kijkradio", "S-TV", "4" ],
+      [ "Omroep Brabant TV", "167", "20704", "207", "1000", "Leon in Afrika", "Brabant Nieuws Middag", "4" ],
+      [ "AT 5", "168", "2002", "2", "1000", "Basta", "Amsterdam today", "4" ],
+      [ "TV Noord-Holland", "169", "2001", "2", "1000", "", "", "4" ],
+      [ "TV Rijnmond", "170", "2005", "2", "1000", "Rijnmond Nieuws", "Het Weer", "4" ],
+      [ "TV West", "171", "2004", "2", "1000", "TV West Nieuws", "Team West", "4" ],
+      [ "GoedTV", "172", "29001", "29", "1000", "Warzone: India", "Wereld van Doen - Brazilië", "4" ]
+  ];
+
+  //TEST INITIALISATION
+
+  var idTestProcess="";
+  window.onload = function(){
+      kernel.require('./Libs/CheckUpdatedEITpf.js',
+                     function(){
+                         webiz.move( 100, 100 );
+                         webiz.resize( 650, 600 );
+                         webiz.hide();
+                         Utilities.print(testName);
+                         CheckUpdatedEITpf.startTest(serviceList,
+                                                     fields,
+                                                     filters,
+                                                     hash,
+                                                     time,
+                                                     expectedResultBefore,
+                                                     expectedResultAfter);
+                     },
+                     function(){
+                         webiz.move( 100, 100 );
+                         webiz.resize( 650, 600 );
+                         webiz.hide();
+                         jbiz.writeLine(
+                             "WARN: './Libs/CheckUpdatedEITpf.js' is "
+                                 + "not uploaded.");
+                         setTimeout(function(){jbiz.exit()}, 3000);
+                     }
+                    );
+  };
+
+</script>
+</head>
+<body>
+  <div style="float:left; width:100%; text-align:left;">
+    <div id='idTestProcess'></div>
+  </div>
+</body>
+</html>
+-

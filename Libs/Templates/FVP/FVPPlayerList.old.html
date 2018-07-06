@@ -1,0 +1,145 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<script src="../kernel.js"></script>
+<script type="text/javascript">
+
+
+var expected_array = [
+["0", "Player V0 player_001", "DTG V0 player_001", "http://127.0.0.1:3555?http://image.fvcmd.test/images/MDS_901/players/png/player_001","http://ait.fvcmd.test/players/player_001?nids[]=12290&lloc=playerpage"],
+["0", "Player V0 player_002", "DTG V0 player_002", "http://127.0.0.1:3555?http://image.fvcmd.test/images/MDS_901/players/png/player_002", "http://ait.fvcmd.test/players/player_002?nids[]=12290&lloc=playerpage"],
+["1", "Player V0 player_003", "DTG V0 player_003", "http://127.0.0.1:3555?http://image.fvcmd.test/images/MDS_901/players/png/player_003", "http://ait.fvcmd.test/players/player_003?nids[]=12290&lloc=playerpage"],
+]
+
+
+// ------DO NOT CHANGE SCRIPT BELOW THIS LINE--------
+window.onload = function(){
+    kernel.require(['../Utilities.js'], function(){manager(["Connect"])});
+}
+
+var res = []
+var err_count = 0
+
+function manager(args) {
+    var steps = {
+        
+        "Connect" : function() {
+            Utilities.connectToTV(function(){ manager(["GetPlayerList"]); });
+        },
+
+        "GetPlayerList" : function(){
+
+            var fvpSearchListTable = de.loewe.sl2.table.fvp.playerlist;
+            var queryDef  =  
+                {
+                //    selections: [ { field: 0, conditionType: 1, condition: "xyz" } ],
+                    fields:     [ 0, 1, 2, 3, 4 ],
+                //    orders:     [ { field: 0, direction: 1 } ]
+                }
+
+            function result() {
+
+              query = fvpSearchListTable.createQuery( queryDef );
+              query.onQueryReady.connect( this, onQueryReady );
+              query.execute();
+
+              function onQueryReady( count )
+              {   
+                  if (count <= 0) {
+                    // Utilities.print("Query with given condition returned empty result, ")
+                    // Utilities.print("nothing check and to show.")
+                    // Utilities.print("Check FVP Framework is running.")
+                    // Utilities.print("Test FAILED")
+                    // manager(["EndTest"]);
+                    manager(["Results"]);
+                  }
+                  query.onQueryReady.disconnect(this, onQueryReady);
+                  query.onRows.connect( this, onRows );
+                  query.readAllRows();
+              }
+
+              function onRows( id, rows )
+              {
+                  res = res.concat(rows)
+                  query.onRows.disconnect(this, onRows);
+                  manager(["Results"]);
+              }
+            }
+  
+            result()
+        },
+
+        "Results": function() {
+
+          function identitycheck(res, expected_array){
+
+
+              for(i=0; i < expected_array.length; i++){
+                for(j=0; j < expected_array[i].length; j++){
+                
+                    if (expected_array[i][j] == "DNC") {
+                    continue
+                    }
+                
+                    else if (expected_array[i][j] != res[i][j]) {
+                    Utilities.print("\nThere is some changed row in result array")
+                    Utilities.print("\"" + res[i][j] + "\"");
+                    
+                    Utilities.print("\nCorresponding to row in expected array")
+                    Utilities.print("\"" + expected_array[i][j] + "\"");
+                    
+                    return false
+                    }
+
+                }
+            }
+            return true
+
+          }
+          
+          Utilities.print("\nActual Playerlist: ")
+          
+          Utilities.print("[");
+          
+          for ( i = 0; i < res.length; i++ ){
+              Utilities.print("[");
+              for ( j = 0; j < res[i].length; j++ ){ 
+                  if (res[i][j].search(/ERROR/i) == 0) {
+                  err_count += 1
+                  }
+                Utilities.print("\"" + res[i][j] + "\",");
+              }
+              Utilities.print("],");
+          }
+          Utilities.print("]");
+
+          id_check = identitycheck(res, expected_array)
+
+          if (err_count != 0) {
+              Utilities.print("\n#VERIFICATION FAILED: "
+                                 + "Current PlayerList item contains ERROR string.");
+            }
+            else if (id_check == false) {
+              Utilities.print("\n#VERIFICATION FAILED: "
+                                 + "Current PlayerList is not equal to expected.");
+            }
+            else {
+             Utilities.print("\n#VERIFICATION PASSED: "
+                                 + "Current PlayerList is equal to expected."); 
+            }
+          manager(["EndTest"]);  
+        },
+
+        "EndTest" : function() {
+            Utilities.print("\nExecution finished.");
+            Utilities.printTestResult();
+            setTimeout(function(){ jbiz.exit(); }, 1500);
+        }
+    };
+    steps[args[0]](args.splice(1, 1));
+}
+</script>
+</head>
+</html>
+

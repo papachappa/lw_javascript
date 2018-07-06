@@ -1,0 +1,333 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+ body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js"></script>
+<script src="../webiz_tests/Libs/kernel.js"></script>
+<script type="text/javascript">
+//TEST SETTINGS
+
+/* This structure of settings allows to determine initial value of settings,
+ should it be checked or not, and new value that should be set for test execution.
+ Each key from this structure can be omitted.
+
+ example: {
+    //value that should be set independly of inital value. Corresponding api
+    //will be called even if initial value is equal to the one that should be set.
+        operatingValue: VALUE_TO_SET,
+
+    //initial value that will be checked if is determinated and
+    // not a "DO_NOT_CHECK".
+    //If initial value is different from expected and VALUE_TO_SET is not set,
+    //then INITIAL_VALUE will be set.
+        initialValue: INITIAL_VALUE
+    }
+*/
+
+//TV SETTINGS
+var testName = "Initial Scan for Germany DVB-T, DVB-C and DVB-S";
+
+/*
+ Array of TV settings that should be set or checked during test execution.
+ No settings will be set and checked if parameter is omitted or empty.
+ List of available settings (each setting can be omitted):
+ - location, see 'Locations' in ./Enumerators.js for all available values
+ - connected cables, see 'Connected Cables' screen of initial scan wizard
+    to verify correct order of sources for tested TV.
+    [Analog,DVB-T,DVB-C,DVB-S1,DVB-S2]
+ - cableСonnectors, see 'Connected Cables' list of available interfaces:
+    0 - Analog,
+    1 - DVB-T,
+    2 - DVB-C
+    3 - DVB-S1
+    4 - DVB-S2
+    5 - IPTV
+*/
+var tvSettings= {
+	languageOSD: {
+		operatingValue: Language.ENGLISH,
+	},
+	location: {
+		operatingValue: Location.GERMANY,
+	},
+	connectedCables: {
+		operatingValue: [NO,YES,YES,YES,NO],
+	}
+};
+
+//OPERATOR ID
+//See 'Operator' in ./Enumerators.js for all available values.
+var operators = {};
+//operators.dvbt = Operator.STANDARD;
+operators.dvbt = Operator.STANDARD;
+operators.dvbc = Operator.UNITYMEDIA;
+operators.dvbs = Operator.ASTRA_GERMANY;
+//ATTENTION: IP-TV is not implemented now
+//operators.iptv = Operator.IPTV;
+
+//SCAN SETTINGS
+/*
+ Array of scan settings that should be set or checked during test execution.
+ No settings will be set and checked if parameter is omitted or empty.
+ Current template contains all available settings. For available values
+ see ./Enumerators.js. Any setting can be omitted if verification and
+ setting of new value is not required for test execution.
+*/
+var scanSettings = {};
+
+//Scan settings for DVB-T
+scanSettings.dvbt = {
+    scramblingSelectable: {
+        initialValue: YES
+    },
+    searchScrambled: {
+        operatingValue: NO,
+    },
+	lcnSelectable: {
+        initialValue: YES
+    },
+    lcnAccepted: {
+        initialValue: NO
+    },
+    searchingMethodSelectable: {
+        initialValue: YES
+    },
+    searchMethod: {
+        initialValue: SearchMethod.CHANNEL
+    },
+    networkidSelectable: {
+        initialValue: NO
+    },
+        networkidNone: {
+        initialValue: 0
+    },
+    networkidNoneSelectable: {
+        initialValue: NO
+    },
+    networkidNone: {
+        initialValue: YES
+    },
+    frequencySelectable: {
+        initialValue: NO
+    },
+    frequency: {
+		initialValue: 107500
+	},
+    hideInputValues: {
+        initialValue: NO
+    },
+    timeControl: {
+        initialValue: Time.READ_ONLY
+    },
+    takeoverServicesChanges: {
+        initialValue: NO
+    }
+};
+
+//Scan settings for DVB-C
+scanSettings.dvbc = {
+	scramblingSelectable: {
+		initialValue: NO
+	},
+	searchScrambled: {
+		initialValue: YES
+	},
+	lcnSelectable: {
+		initialValue: NO
+	},
+	lcnAccepted: {
+		initialValue: YES
+	},
+	searchingMethodSelectable: {
+		initialValue: NO
+	},
+	searchMethod: {
+		initialValue: SearchMethod.NETWORK
+	},
+	networkid: {
+		initialValue: 0
+	},	 
+	frequencySelectable: {
+		initialValue: NO
+	},
+	frequency: {
+		initialValue: 44000
+	},
+	hideInputValues: {
+		initialValue: NO
+	},
+	timeControl: {
+		initialValue: Time.READ_ONLY
+	},
+	takeoverServicesChanges: {
+		initialValue: YES
+	}
+};
+
+//Scan settings for DVB-S cable 1
+scanSettings.dvbs = {
+	scheme: {
+		operatingValue: SatScheme.SINGLE
+	},
+	satelliteSettings: {
+		satelliteName1: {
+			operatingValue: Satellite.ASTRA1
+		}
+	},
+	satellite1: {
+		scramblingSelectable: {
+			initialValue: YES
+		},
+		searchScrambled: {
+			operatingValue: YES
+		},
+		lcnSelectable: {
+			initialValue: NO
+		},
+		lcnAccepted: {
+			initialValue: YES
+		},
+		searchingMethodSelectable: {
+			initialValue: NO
+		},
+		searchMethod: {
+			initialValue: SearchMethod.NETWORK
+		},
+		networkidSelectable: {
+			initialValue: NO
+		},
+		modulationSelectable: {
+			initialValue: NO
+		},
+		frequencySelectable: {
+			initialValue: NO
+		},
+		timeControl: {
+			initialValue: Time.READ_ONLY
+		},
+		takeoverServicesChanges: {
+			initialValue: YES
+		},
+		currentScanSatellite: {
+			operatingValue: Satellite.ASTRA1
+		}
+	}
+};
+
+//PARENTAL CONTROL SETTINGS
+var pinSettings = {
+    PIN_initialModificationAllowed: {
+        initialValue: YES
+    },
+    PIN_initialPinDefinitionAllowed: {
+        initialValue: YES
+    },
+    PIN_deactivationAllowed: {
+        initialValue: YES
+    },
+    PIN_resetAllowed: {
+        initialValue: YES
+    },
+    PIN_ageRelatedLockActive: {
+        initialValue: NO
+    },
+    PIN_ageRelatedLockLevel: {
+        initialValue: 18
+    },
+    PIN_ageRelatedAlwaysExist: {
+        initialValue: NO
+    },
+    PIN_ageRelatedLockDisengageable: {
+        initialValue: YES
+    },
+    PIN_code: {
+        initialValue: "".
+        operatingValue: 1234
+    }
+};
+
+//EXPECTED SCAN RESULT
+
+/*
+ Array containing scan states and required actions.
+ Currectly only manual LCN conflict resolution
+ can be initiated during INITIAL scan for Mediaset.
+ Script will check that not described states were not observed
+ during test execution.
+ 'serviceList' - array of all conflicted services (in any order). Each
+ service should be described in format:
+ [Name, ChNum, ServiceID, StreamID, NetworkID, Type, Visibility, Selectability]*
+ you can use ./GetExpectedResult/PrintConflictedServices.html to get correct
+ expected result.
+ 'executeSwap' -array of required swaps. Each swap should be described in format:
+ {type:1, chanNumbers:[1, 850]} where type - media type of services, chanNumbers - pare of
+ channel numbers that should be swapped.
+*/
+var expectedScanResult = {
+    lcnConflict: {
+        serviceList:[
+            [ 'Serv1', '1', '1', '60000', '2000', '4', '1', '1' ],
+            [ 'Serv2', '850', '2', '60000', '2000', '4', '1', '1' ]
+        ],
+        executeSwap:[
+            {type:MediaType.TV, chanNumbers:[1, 850]}
+        ]
+    },
+	regionSelection: [{
+        listOfRegions:["None","England"],
+        selectRegion:"England"
+    },
+{
+        listOfRegions:["None","London"],
+        selectRegion:"London"
+    }]
+};
+
+/*
+ Number of TV and Radio services expected to be found during scan.
+ Value will not be checked if parameter is omitted or empty.
+*/
+var numberTvServices = 7;
+var numberRadioServices = "";
+
+//TEST INITIALISATION
+
+var idTestProcess="";
+window.onload = function(){
+    kernel.require('./Libs/InitialScan.js',
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.
+            InitialScan.startTest(tvSettings,
+								  operator,
+					              scanSettings,
+                                  pinSettings,
+					              numberTvServices,
+					              numberRadioServices,
+					              expectedScanResult);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            jbiz.writeLine("WARN: './Libs/InitialScan.js' is not uploaded.");
+            setTimeout(function(){jbiz.exit()},3000);
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>

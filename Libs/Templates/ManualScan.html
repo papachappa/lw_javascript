@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>WeBiz</title>
+<style type="text/css">
+     body { margin: 0; font-size: 16px; background-color:rgb(245,245,245); }
+</style>
+<script src="../webiz_tests/Libs/Enumerators.js" type=
+"text/javascript"> </script>
+<script src="../webiz_tests/Libs/kernel.js" type=
+"text/javascript"> </script>
+<script type="text/javascript">
+//TEST SETTINGS
+
+/* This structure of settings allows to determine initial value of settings,
+ should it be checked or not, and new value that should be set for test execution.
+ Each key from this structure can be omitted.
+
+ example: {
+    //value that should be set independly of inital value. Corresponding api
+    //will be called even if initial value is equal to the one that should be set.
+        operatingValue: VALUE_TO_SET,
+
+    //initial value that will be checked if is determinated and
+    // not a "DO_NOT_CHECK".
+    //If initial value is different from expected and VALUE_TO_SET is not set,
+    //then INITIAL_VALUE will be set.
+        initialValue: INITIAL_VALUE
+    }
+*/
+
+
+//TV SETTINGS
+
+var testName = "Manual scan";
+/*
+ Array of TV settings that should be set or checked during test execution.
+ No settings will be set and checked if parameter is omitted or empty.
+ List of available settings (each setting can be omitted):
+ - location, see 'Locations' in ./Enumerators.js for all available values
+ - frontend, see 'Source' in ./Enumerators.js for all available values
+ ATTENTION! For auto and manual scans location can NOT be changed!
+*/
+var tvSettings= {
+    location: {
+        initialValue: Location.GERMANY
+    },
+    frontend: {
+        operatingValue: Source.DVB_S
+    }
+};
+
+//OPERATOR ID
+/*
+  See 'Operator' in ./Enumerators.js for all available values.
+  The operator cannot be set during manual scan, so its value will be checked
+  only.
+  Set operator to DO_NOT_CHANGE to skip its verification.
+*/
+var operator = Operator.STANDARD;
+
+//SCAN SETTINGS
+/*
+ Array of scan settings that should be set or checked during test execution.
+ No settings will be set and checked if parameter is omitted or empty.
+ Current template contains all available settings. For available values
+ see ./Enumerators.js. Any setting can be omitted if verification and
+ setting of new value is not required for test execution.
+*/
+var scanSettings = {
+    scramblingSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    searchScrambled: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    lcnSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    lcnAccepted: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    searchingMethodSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    searchMethod: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    networkidSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    networkid: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    networkidNoneSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    networkidNone: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    modulationSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    modulation: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    frequencySelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    frequency: {
+        operatingValue: 11836000,
+        initialValue: DO_NOT_CHECK
+    },
+    symbolrateSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    symbolrate: {
+        operatingValue: [1000],
+        initialValue: DO_NOT_CHECK
+    },
+    hdPreferredSelectable: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    hdPreferred: {
+        operatingValue: DO_NOT_CHANGE,
+        initialValue: DO_NOT_CHECK
+    },
+    currentScanSatellite: {
+        operatingValue: Satellite.HOT_BIRD
+    }
+};
+
+//EXPECTED SCAN RESULT
+
+/*
+ LCN CONFLICT
+ 'serviceList' - array of all conflicted services (in any order). Each
+ service should be described in format:
+ [Name, ChNum, ServiceID, StreamID, NetID, Type, Visibility, Selectability]
+ 'executeSwap' -array of required swaps. Swaps should be described in format:
+ {type:1, chanNumbers:[1, 850]} where type - media type of services,
+ chanNumbers - pare of channel numbers that should be swapped.
+
+ FOUND SERVICES
+ 'serviceList' - array of all services found during manual scan in next format:
+  [Name, Media type, is New, TSID, ONID, SID]
+
+  NOTE: The order of the service triplet doesn't match the one used in other
+  expected results.
+
+ 'saveServices' - list of indexes in the 'serviceList' array for services that
+  should be saved. If a service is not a newly found ("is New" == 0) and
+  selected to be saved again, then a corresponding warning will be logged.
+
+  You can use corresponding script from ./GetExpectedResult to get correct
+  expected result.
+*/
+var expectedScanResult = {
+    lcnConflict: {},
+    foundServices: {
+        serviceList:[
+            ["Event","1","0","1020","65024","2870"],
+            ["EventHD","1","0","1020","65024","2810"],
+            ["C Emo","1","0","1020","65024","2950"],
+            ["C Frst","1","0","1020","65024","2960"],
+            ["C Hits","1","0","1020","65024","2880"],
+            ["C Seri","1","0","1020","65024","2800"]
+        ],
+        saveServices: [0, 4]
+    }
+};
+
+//TEST INITIALISATION
+
+var idTestProcess="";
+window.onload = function(){
+    kernel.require(
+        './Libs/ManualScan.js',
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            Utilities.print(testName);
+//DO NOT FORGET TO UPDATE THE FUNCTION CALL IF YOU RENAMED OR REMOVED VARIABLES.
+            ManualScan.startTest(tvSettings,
+                                 operator,
+                                 scanSettings,
+                                 expectedScanResult);
+        },
+        function(){
+            webiz.move( 100, 100 );
+            webiz.resize( 650, 600 );
+			webiz.hide();
+            jbiz.writeLine("WARN: './Libs/ManualScan.js' is not uploaded.");
+            setTimeout(function(){jbiz.exit()},3000)
+        }
+    );
+};
+
+</script>
+</head>
+<body>
+    <div style="float:left; width:100%; text-align:left;">
+        <div id='idTestProcess'></div>
+    </div>
+</body>
+</html>
